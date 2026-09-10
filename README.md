@@ -23,19 +23,17 @@ installer (`npm run package`) runs on a machine with no dev tools at all.
 ## Repository layout
 
 ```
-astro-catalogue/
-  electron/       Main process: scanner, SQLite storage, Seestar import, IPC
-  src/            React renderer
-    components/   Views (Catalogue, Planning, Seestar, Configuration)
-    lib/          Shared calculations (astronomy, ratings, grouping, format)
-    lib/data/     Bundled deep-sky coordinate/size/type lookup (~1 MB JSON)
-  scripts/        Sample-data generator + data-refresh scripts
+electron/       Main process: scanner, SQLite storage, Seestar import, IPC
+src/            React renderer
+  components/   Views (Catalogue, Planning, Seestar, Configuration)
+  lib/          Shared calculations (astronomy, ratings, grouping, format)
+  lib/data/     Bundled deep-sky coordinate/size/type lookup (~1 MB JSON)
+scripts/        Sample-data generator + data-refresh scripts
 ```
 
 ## Quick start
 
 ```bash
-cd astro-catalogue
 npm install
 npm run sample-data   # optional, see below
 npm run dev
@@ -75,7 +73,7 @@ Don't have a photo directory handy? Generate one:
 npm run sample-data
 ```
 
-This creates `astro-catalogue/sample-data/` containing:
+This creates `sample-data/` containing:
 
 - **M 31** — two frame types (`LP`, `IRCUT`) across two nights
 - **M 42**, **NGC 7000**, **M 101**, **M 32** — single-type objects

@@ -4,7 +4,7 @@ Cross-platform (Windows + Ubuntu) Electron desktop app for Seestar astrophotogra
 It catalogues an existing astro-photo directory tree, helps plan upcoming sessions, and
 imports new captures off the Seestar network share into that tree.
 
-The app code lives in `astro-catalogue/`. A longer prose guide is `astro-catalogue/README.md`;
+The app code lives at the repo root. A longer prose guide is `README.md`;
 the original product requirements are `application.md`. This file is the working reference and
 the source of the numbered conventions the code cites (e.g. "CLAUDE.md rule 10").
 
@@ -30,9 +30,8 @@ Prerequisite: **Node.js 22.5+** and npm only. No native deps, no C/C++ toolchain
 is used for storage.
 
 ```bash
-cd astro-catalogue
 npm install
-npm run sample-data   # optional: generates astro-catalogue/sample-data/ (wipes it each run)
+npm run sample-data   # optional: generates sample-data/ (wipes it each run)
 npm run dev           # Vite (renderer + main + preload, HMR) + launches Electron
 ```
 
@@ -58,14 +57,14 @@ If `npm install` complains about scripts "not covered by allowScripts", run
 
 **Process split:**
 
-- `astro-catalogue/electron/` — main process. `main.ts` registers all `ipcMain.handle`
+- `electron/` — main process. `main.ts` registers all `ipcMain.handle`
   channels; `preload.ts` exposes them to the renderer as a typed API
   (`src/electron-api.d.ts`). Key modules: `scanner.ts` (walk the tree, parse folders,
   collect warnings), `db.ts` (`node:sqlite` cache in the OS app-data dir), `seestar.ts`
   (share discovery + copy planning), `merge.ts` / `rename.ts` (file relocation),
   `directory-pattern.ts` (the pattern tokenizer — see rule 3), `catalog.ts` /
   `file-types.ts` (classification), `shared-types.ts` (types + validators shared main↔renderer).
-- `astro-catalogue/src/` — renderer. `App.tsx` holds top-level state and switches between the
+- `src/` — renderer. `App.tsx` holds top-level state and switches between the
   four sections (`components/AppNav.tsx`: `catalogue | planning | seestar | configuration`).
   `components/` are views/widgets; `lib/` is **shared pure logic** — astronomy math, ratings,
   grouping, formatting, duplicate detection (see rule 1, nothing calculation-y is duplicated
