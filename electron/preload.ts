@@ -14,6 +14,9 @@ const api: AstroCatalogueApi = {
     ipcRenderer.invoke('analyze-directory', root, directoryPattern),
   analyzeDirectories: (root: string, directoryPattern: string, topLevelNames: string[]) =>
     ipcRenderer.invoke('analyze-directories', root, directoryPattern, topLevelNames),
+  analyzeObjects: (root: string, directoryPattern: string, objectPaths: string[]) =>
+    ipcRenderer.invoke('analyze-objects', root, directoryPattern, objectPaths),
+  listNewTopLevelDirectories: (root: string) => ipcRenderer.invoke('list-new-top-level-directories', root),
   getCatalogue: () => ipcRenderer.invoke('get-catalogue'),
   onScanProgress: (callback: (progress: ScanProgress) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, progress: ScanProgress) => callback(progress)

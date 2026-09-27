@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { applyDirectoryPattern } from './directory-pattern'
+import { applyDirectoryPattern, topLevelName } from './directory-pattern'
 import { collectObjectLeafFiles } from './scanner'
 import { copyFileStreaming } from './seestar'
 import {
@@ -12,12 +12,6 @@ import {
 } from './shared-types'
 
 const PROGRESS_THROTTLE_MS = 150
-
-/** The root-level folder name a path lives under (the object folder, per application.md). */
-function topLevelName(rootPath: string, target: string): string {
-  const relative = path.relative(rootPath, target)
-  return relative.split(path.sep)[0] || path.basename(target)
-}
 
 /**
  * Swaps a whole-word occurrence of the source target name in a file name for the main one,

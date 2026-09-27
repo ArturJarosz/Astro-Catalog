@@ -4,6 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { initDb, getLastRoot, saveCatalogue, loadCatalogue, updateCatalogueDirectories } from './db'
 import { scanRoot, scanDirectories } from './scanner'
+import { topLevelName } from './directory-pattern'
 import { buildCopyPlan, executeCopy, listSourceDirectories, SEESTAR_SOURCE_DIR } from './seestar'
 import { buildMergePlan, executeMerge } from './merge'
 import { buildRenamePlan, executeRename } from './rename'
@@ -48,7 +49,16 @@ ipcMain.handle('select-root-dir', async () => {
   return result.filePaths[0]
 })
 
+/** Fails with a readable message when the catalogue root was moved or deleted since it was chosen. */
+async function assertRootDirectory(rootPath: string): Promise<void> {
+  const stat = await fs.stat(rootPath).catch(() => null)
+  if (!stat?.isDirectory()) {
+    throw new Error(`Root directory "${rootPath}" no longer exists. Use Select Root Directory to pick it again.`)
+  }
+}
+
 ipcMain.handle('analyze-directory', async (_event, rootPath: string, directoryPattern: string) => {
+  await assertRootDirectory(rootPath)
   const { objects, warnings } = scanRoot(rootPath, directoryPattern, (currentPath, objectsScanned) => {
     mainWindow?.webContents.send('scan-progress', { currentPath, objectsScanned })
   })
@@ -56,17 +66,53 @@ ipcMain.handle('analyze-directory', async (_event, rootPath: string, directoryPa
   return loadCatalogue()
 })
 
+/** Re-scans just the given root-level folders and splices the result into the cached catalogue. */
+async function analyzeTopLevel(rootPath: string, directoryPattern: string, topLevelNames: string[]) {
+  await assertRootDirectory(rootPath)
+  const { objects, warnings } = scanDirectories(rootPath, directoryPattern, topLevelNames, (currentPath, objectsScanned) => {
+    mainWindow?.webContents.send('scan-progress', { currentPath, objectsScanned })
+  })
+  const directories = topLevelNames.map((name) => path.join(rootPath, name))
+  updateCatalogueDirectories(rootPath, directories, objects, warnings)
+  return loadCatalogue()
+}
+
 ipcMain.handle(
   'analyze-directories',
-  async (_event, rootPath: string, directoryPattern: string, topLevelNames: string[]) => {
-    const { objects, warnings } = scanDirectories(rootPath, directoryPattern, topLevelNames, (currentPath, objectsScanned) => {
-      mainWindow?.webContents.send('scan-progress', { currentPath, objectsScanned })
-    })
-    const directories = topLevelNames.map((name) => path.join(rootPath, name))
-    updateCatalogueDirectories(rootPath, directories, objects, warnings)
-    return loadCatalogue()
+  async (_event, rootPath: string, directoryPattern: string, topLevelNames: string[]) =>
+    analyzeTopLevel(rootPath, directoryPattern, topLevelNames),
+)
+
+ipcMain.handle(
+  'analyze-objects',
+  async (_event, rootPath: string, directoryPattern: string, objectPaths: string[]) => {
+    const topLevelNames = Array.from(new Set(objectPaths.map((objectPath) => topLevelName(rootPath, objectPath))))
+    return analyzeTopLevel(rootPath, directoryPattern, topLevelNames)
   },
 )
+
+/**
+ * Root-level folders not yet known to the catalogue, i.e. candidates for a partial analysis of
+ * new objects. Folders that only produced warnings count as known, so they aren't offered forever.
+ */
+ipcMain.handle('list-new-top-level-directories', async (_event, rootPath: string) => {
+  await assertRootDirectory(rootPath)
+  const { objects, warnings } = loadCatalogue()
+  const insideRoot = (target: string) => {
+    const relative = path.relative(rootPath, target)
+    return relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
+  }
+  const known = new Set(
+    [...objects.map((o) => o.path), ...warnings.map((w) => w.path)]
+      .filter(insideRoot)
+      .map((target) => topLevelName(rootPath, target)),
+  )
+  const entries = await fs.readdir(rootPath, { withFileTypes: true })
+  return entries
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.') && !known.has(entry.name))
+    .map((entry) => entry.name)
+    .sort((a, b) => a.localeCompare(b))
+})
 
 ipcMain.handle('get-catalogue', async () => {
   const catalogue = loadCatalogue()

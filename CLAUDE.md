@@ -13,6 +13,8 @@ the source of the numbered conventions the code cites (e.g. "CLAUDE.md rule 10")
 - **Catalogue** — scan a root directory, list objects (grouped by Messier/NGC/IC/Caldwell),
   and show per-frame-type frame counts, total integration time, and disk usage. Card or table
   view, filter/sort, object detail popup with on-demand Wikipedia summary + thumbnail.
+  **Analyze** does a full re-scan; its ▾ menu adds **Partial analysis…** (`PartialAnalysisModal`)
+  to scan only new top-level folders and/or re-scan selected objects (see rule 9).
 - **Planning** — for a configured observing location: altitude over the night, Moon separation
   and phase (window runs noon-to-noon), and frame-fit vs. the Seestar's field of view. Each
   rated Bad/Good/Perfect against configurable thresholds. Also proposes not-yet-shot objects
@@ -97,6 +99,6 @@ If `npm install` complains about scripts "not covered by allowScripts", run
    - Video clips: `<YYYY>-<MM>-<DD>-<HHMMSS>-<target>-RAW.<ext>` (exposure is fixed at `0s` since video frames don't count toward exposure totals)
    Files matching neither pattern are reported as invalid and are not imported.
 8. On import, the original file name is preserved unchanged in the destination — Seestar import never renames files. Only merge (rule 10) renames files.
-9. Auto-analysis (re-scan) after import/merge is always a **partial** re-scan restricted to the top-level object folders that were actually written to (`scanDirectories`/`scanner.ts`), not a full catalogue re-scan. This only runs when the import/merge target directory is the catalogue root; otherwise re-analysis is skipped.
+9. Auto-analysis (re-scan) after import/merge is always a **partial** re-scan restricted to the top-level object folders that were actually written to (`scanDirectories`/`scanner.ts`), not a full catalogue re-scan. This only runs when the import/merge target directory is the catalogue root; otherwise re-analysis is skipped. The user-triggered **Partial analysis** uses the same mechanism: new objects are root-level folders not yet in the catalogue (`list-new-top-level-directories`), and re-analyzed objects are mapped to their top-level folder via `topLevelName` (`electron/directory-pattern.ts`).
 10. Merging duplicate objects moves the "other" objects' files into the "main" object's folder tree using the same directory pattern as import. A file is renamed only if the source object's name appears as a whole word inside the file name, in which case it is swapped for the main object's name; otherwise the file name is left untouched. Destination collisions are skipped, and now-empty source folders are pruned after the move.
 11. Duplicate-object detection (used by both the catalogue banner and the merge modal) groups objects that share the same bundled J2000 coordinates **and** the same mosaic status; this logic must stay centralized in one shared function (see rule 1) rather than duplicated per view.

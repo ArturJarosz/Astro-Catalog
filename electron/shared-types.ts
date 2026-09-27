@@ -205,6 +205,8 @@ export interface AstroCatalogueApi {
     directoryPattern: string,
     topLevelNames: string[],
   ) => Promise<CatalogueData>
+  analyzeObjects: (root: string, directoryPattern: string, objectPaths: string[]) => Promise<CatalogueData>
+  listNewTopLevelDirectories: (root: string) => Promise<string[]>
   getCatalogue: () => Promise<CatalogueData>
   onScanProgress: (callback: (progress: ScanProgress) => void) => () => void
   getObjectSummary: (name: string, catalog: string, catalogNumber: number | null) => Promise<ObjectSummary | null>
