@@ -12,7 +12,9 @@ shoot with a **Seestar** smart telescope. It does three things:
    your catalogue's directory structure.
 
 Results are cached in a local SQLite database, so the app starts instantly
-without rescanning — click **Analyze** when you want to refresh.
+without rescanning — click **Analyze** when you want to refresh. The ▾ next to
+it offers **Partial analysis…**, which scans only new object folders and/or the
+objects you pick (e.g. after deleting bad frames or copying frames in by hand).
 
 Built with Electron + React + TypeScript + Tailwind CSS, using Node's
 built-in `node:sqlite` for storage. There are **no native dependencies**, so

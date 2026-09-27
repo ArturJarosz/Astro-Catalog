@@ -1,4 +1,6 @@
+import { useRef, useState } from 'react'
 import { formatTimestamp } from '../lib/format'
+import { useDismissable } from '../lib/useDismissable'
 import type { ConnectionStatus } from '../App'
 
 interface HeaderProps {
@@ -8,6 +10,8 @@ interface HeaderProps {
   scanProgressLabel: string | null
   onSelectRoot: () => void
   onAnalyze: () => void
+  /** Null when partial analysis isn't possible yet (root never fully analysed). */
+  onPartialAnalyze: (() => void) | null
   seestarStatus: ConnectionStatus
   onCheckSeestarConnection: () => void
   warningCount: number
@@ -33,11 +37,17 @@ export function Header({
   scanProgressLabel,
   onSelectRoot,
   onAnalyze,
+  onPartialAnalyze,
   seestarStatus,
   onCheckSeestarConnection,
   warningCount,
   onWarningsClick,
 }: HeaderProps) {
+  const [analyzeMenuOpen, setAnalyzeMenuOpen] = useState(false)
+  const analyzeMenuRef = useRef<HTMLDivElement>(null)
+  useDismissable(analyzeMenuOpen, analyzeMenuRef, () => setAnalyzeMenuOpen(false))
+  const analyzeDisabled = scanning || !rootPath
+
   return (
     <header className="sticky top-0 z-10 border-b border-white/10 bg-slate-950/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
@@ -89,13 +99,62 @@ export function Header({
             >
               Select Root Directory
             </button>
-            <button
-              onClick={onAnalyze}
-              disabled={scanning || !rootPath}
-              className="rounded-lg bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-500/20 transition hover:from-sky-400 hover:to-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {scanning ? 'Analyzing…' : 'Analyze'}
-            </button>
+            <div ref={analyzeMenuRef} className="relative flex">
+              <button
+                onClick={onAnalyze}
+                disabled={analyzeDisabled}
+                className="rounded-l-lg bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-500/20 transition hover:from-sky-400 hover:to-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {scanning ? 'Analyzing…' : 'Analyze'}
+              </button>
+              <button
+                onClick={() => setAnalyzeMenuOpen((open) => !open)}
+                disabled={analyzeDisabled}
+                title="More analysis options"
+                aria-haspopup="menu"
+                aria-expanded={analyzeMenuOpen}
+                className="rounded-r-lg border-l border-white/20 bg-indigo-500 px-2 py-2 text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path
+                    fillRule="evenodd"
+                    d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+              {analyzeMenuOpen && !analyzeDisabled && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-lg border border-white/10 bg-slate-900 py-1 text-sm shadow-xl"
+                >
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setAnalyzeMenuOpen(false)
+                      onAnalyze()
+                    }}
+                    className="block w-full px-3 py-2 text-left text-slate-200 hover:bg-white/10"
+                  >
+                    Full analysis
+                    <span className="block text-xs text-slate-400">Re-scan the whole catalogue</span>
+                  </button>
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setAnalyzeMenuOpen(false)
+                      onPartialAnalyze?.()
+                    }}
+                    disabled={!onPartialAnalyze}
+                    title={onPartialAnalyze ? undefined : 'Run a full analysis of this root first'}
+                    className="block w-full px-3 py-2 text-left text-slate-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Partial analysis…
+                    <span className="block text-xs text-slate-400">New objects or selected objects only</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <p className="text-xs text-slate-400">
             {scanning && scanProgressLabel ? scanProgressLabel : `Last scanned: ${formatTimestamp(lastScannedAt)}`}

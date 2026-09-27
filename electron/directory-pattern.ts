@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 export type PatternToken = 'object' | 'type' | 'date' | 'exposure'
 
 export interface DirectoryPatternSegment {
@@ -67,4 +69,10 @@ export function applyDirectoryPattern(pattern: string, values: DirectoryPatternV
     .replaceAll('{exposure}', values.exposure)
 
   return splitDirectoryPatternSegments(filled)
+}
+
+/** The root-level folder name a path lives under (the object folder, per application.md). */
+export function topLevelName(rootPath: string, target: string): string {
+  const relative = path.relative(rootPath, target)
+  return relative.split(path.sep)[0] || path.basename(target)
 }

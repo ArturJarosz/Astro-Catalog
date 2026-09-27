@@ -15,6 +15,7 @@ import { Header } from './components/Header'
 import { MoonPanel } from './components/MoonPanel'
 import { ObjectDetailModal } from './components/ObjectDetailModal'
 import { RenameObjectModal } from './components/RenameObjectModal'
+import { PartialAnalysisModal, type PartialAnalysisRequest } from './components/PartialAnalysisModal'
 import { ObjectGroupsGrid } from './components/ObjectGroupsGrid'
 import { PropositionFilters } from './components/PropositionFilters'
 import { SeestarModelSelect } from './components/SeestarModelSelect'
@@ -97,6 +98,7 @@ export default function App() {
   }
 
   const [mergeModalOpen, setMergeModalOpen] = useState(false)
+  const [partialAnalysisOpen, setPartialAnalysisOpen] = useState(false)
   const [dismissedDuplicatesKey, setDismissedDuplicatesKey] = useState<string | null>(
     () => localStorage.getItem('dismissedDuplicatesKey'),
   )
@@ -511,6 +513,39 @@ export default function App() {
     }
   }
 
+  /**
+   * User-triggered partial analysis: scans new root-level folders and/or re-scans chosen objects,
+   * leaving the rest of the cached catalogue untouched (CLAUDE.md rule 9).
+   */
+  async function handlePartialAnalyze({ newTopLevelNames, objectPaths }: PartialAnalysisRequest) {
+    const rootPath = catalogue?.rootPath
+    if (!rootPath) return
+    setScanning(true)
+    setError(null)
+    setScanProgressLabel('Partial analysis…')
+    try {
+      let result: CatalogueData | null = null
+      if (newTopLevelNames.length > 0) {
+        result = await window.astroCatalogue.analyzeDirectories(rootPath, directoryPattern, newTopLevelNames)
+      }
+      if (objectPaths.length > 0) {
+        result = await window.astroCatalogue.analyzeObjects(rootPath, directoryPattern, objectPaths)
+      }
+      if (result) {
+        const refreshed = result
+        setCatalogue(refreshed)
+        // Keep an open detail popup in sync with the re-scanned data (or close it if the object is gone).
+        setSelectedObject((prev) => (prev ? (refreshed.objects.find((o) => o.path === prev.path) ?? null) : prev))
+      }
+    } catch (e) {
+      setError(String(e))
+      throw e
+    } finally {
+      setScanning(false)
+      setScanProgressLabel(null)
+    }
+  }
+
   const groups = catalogue ? groupObjectsByCatalog(catalogue.objects) : []
   const effectiveSelectedCatalog =
     selectedCatalog !== null && groups.some((g) => g.catalog === selectedCatalog) ? selectedCatalog : null
@@ -595,6 +630,7 @@ export default function App() {
         scanProgressLabel={scanProgressLabel}
         onSelectRoot={handleSelectRoot}
         onAnalyze={handleAnalyze}
+        onPartialAnalyze={catalogue?.rootPath && catalogue.lastScannedAt ? () => setPartialAnalysisOpen(true) : null}
         seestarStatus={seestarStatus}
         onCheckSeestarConnection={checkSeestarConnection}
         warningCount={catalogue?.warnings.length ?? 0}
@@ -901,6 +937,15 @@ export default function App() {
           onRemoveManualLink={handleRemoveManualLink}
           onMerged={handleAnalyzeDirectories}
           onClose={() => setMergeModalOpen(false)}
+        />
+      )}
+
+      {partialAnalysisOpen && catalogue?.rootPath && (
+        <PartialAnalysisModal
+          rootPath={catalogue.rootPath}
+          objects={catalogue.objects}
+          onRun={handlePartialAnalyze}
+          onClose={() => setPartialAnalysisOpen(false)}
         />
       )}
 
