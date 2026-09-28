@@ -17,6 +17,7 @@ import {
 } from '../lib/alternativeNamesDisplay'
 import { labelForObjectType } from '../lib/objectType'
 import { THUMBNAIL_SIZE_LABELS, type ThumbnailSize } from '../lib/thumbnailSize'
+import { InfoTip } from './InfoTip'
 import { ObjectTypeColorPicker } from './ObjectTypeColorPicker'
 import {
   CONFIGURABLE_OBJECT_TYPES,
@@ -268,12 +269,13 @@ export function ConfigurationView({
       {activeTab === 'general' && (
       <>
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Observing location</h2>
-        <p className="mb-3 text-xs text-slate-400">
-          Your position on Earth. Used for every altitude, visibility and moon-separation calculation across the
-          app — the Moon Panel, object ratings and the planning proposals all read it.
-        </p>
-
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Observing location</h2>
+          <InfoTip>
+            Your position on Earth. Used for every altitude, visibility and moon-separation calculation across
+            the app — the Moon Panel, object ratings and the planning proposals all read it.
+          </InfoTip>
+        </div>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-xs text-slate-300">
             Latitude
@@ -326,12 +328,13 @@ export function ConfigurationView({
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">After import</h2>
-        <p className="mb-3 text-xs text-slate-400">
-          Default state of the "Re-analyse imported objects" tick on the Seestar tab. Only the object folders that
-          received new files are re-scanned, so the catalogue is up to date without a full re-analysis.
-        </p>
-
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">After import</h2>
+          <InfoTip>
+            Default state of the "Re-analyse imported objects" tick on the Seestar tab. Only the object folders
+            that received new files are re-scanned, so the catalogue is up to date without a full re-analysis.
+          </InfoTip>
+        </div>
         <label className="flex items-center gap-2 text-xs text-slate-300">
           <input
             type="checkbox"
@@ -344,7 +347,27 @@ export function ConfigurationView({
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Seestar source path</h2>
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Seestar source path</h2>
+          <InfoTip wide>
+            <p>
+              The folder the app reads from when checking the Seestar connection and importing photos — this is
+              where your Seestar exposes its <code className="text-slate-200">MyWorks</code> folder, either as a
+              network share or a mounted/mapped local path.
+            </p>
+            <p className="mt-2">
+              <span className="text-slate-200">Recommended on Windows:</span>{' '}
+              <code className="text-slate-100">{DEFAULT_SEESTAR_SOURCE_DIR_WINDOWS}</code>
+              {' — '}the Seestar's SMB share addressed directly by its hostname.
+            </p>
+            <p className="mt-1">
+              <span className="text-slate-200">Recommended on Linux:</span>{' '}
+              <code className="text-slate-100">{DEFAULT_SEESTAR_SOURCE_DIR_LINUX}</code>
+              {' — '}mount the same SMB share first (e.g. with <code className="text-slate-200">gvfs</code> or a{' '}
+              <code className="text-slate-200">cifs</code> mount) and point this at the mount point.
+            </p>
+          </InfoTip>
+        </div>
         <div className="flex items-center gap-3">
           <input
             type="text"
@@ -361,28 +384,62 @@ export function ConfigurationView({
             Save
           </button>
         </div>
-        <p className="mt-2 text-xs text-slate-400">
-          The folder the app reads from when checking the Seestar connection and importing photos — this is where
-          your Seestar exposes its <code className="text-slate-300">MyWorks</code> folder, either as a network share
-          or a mounted/mapped local path.
-        </p>
-        <div className="mt-3 space-y-1 text-xs text-slate-400">
-          <p>
-            <span className="text-slate-300">Recommended on Windows:</span>{' '}
-            <code className="text-slate-200">{DEFAULT_SEESTAR_SOURCE_DIR_WINDOWS}</code>
-            {' — '}the Seestar's SMB share addressed directly by its hostname.
-          </p>
-          <p>
-            <span className="text-slate-300">Recommended on Linux:</span>{' '}
-            <code className="text-slate-200">{DEFAULT_SEESTAR_SOURCE_DIR_LINUX}</code>
-            {' — '}mount the same SMB share first (e.g. with <code className="text-slate-300">gvfs</code> or a{' '}
-            <code className="text-slate-300">cifs</code> mount) and point this at the mount point.
-          </p>
-        </div>
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Directory pattern</h2>
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Directory pattern</h2>
+          <InfoTip wide>
+            <p>
+              Used both when importing from the Seestar and when analyzing your catalogue's root directory — it defines the
+              folder layout that lays out each object's frames. Use <code className="text-slate-300">/</code> to separate
+              directory levels — each segment becomes one folder.
+            </p>
+
+            <table className="mt-3 w-full text-left text-xs">
+              <thead>
+                <tr className="text-slate-300">
+                  <th className="py-1 pr-4 font-medium">Token</th>
+                  <th className="py-1 pr-4 font-medium">Means</th>
+                  <th className="py-1 font-medium">Example value</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                <tr className="border-t border-white/5">
+                  <td className="py-1 pr-4 font-mono text-slate-200">{'{object}'}</td>
+                  <td className="py-1 pr-4">Object name, from the source _sub folder</td>
+                  <td className="py-1 font-mono">M 51</td>
+                </tr>
+                <tr className="border-t border-white/5">
+                  <td className="py-1 pr-4 font-mono text-slate-200">{'{type}'}</td>
+                  <td className="py-1 pr-4">Frame type — IRCUT or LP for light frames, or the target name (e.g. Lunar) for Sun/Moon/planet video</td>
+                  <td className="py-1 font-mono">LP</td>
+                </tr>
+                <tr className="border-t border-white/5">
+                  <td className="py-1 pr-4 font-mono text-slate-200">{'{date}'}</td>
+                  <td className="py-1 pr-4">Capture date, formatted YYYY.MM.DD</td>
+                  <td className="py-1 font-mono">2026.08.09</td>
+                </tr>
+                <tr className="border-t border-white/5">
+                  <td className="py-1 pr-4 font-mono text-slate-200">{'{exposure}'}</td>
+                  <td className="py-1 pr-4">Single-frame exposure length</td>
+                  <td className="py-1 font-mono">20s</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div className="mt-3 space-y-1 text-xs text-slate-300">
+              <p className="text-slate-300">Examples (for M 51, LP, 2026.08.09, 20s):</p>
+              {PATTERN_EXAMPLES.map((example) => (
+                <p key={example}>
+                  <code className="text-slate-300">{example}</code>
+                  {' → '}
+                  <code className="text-slate-200">{previewPatternPath(example)}</code>
+                </p>
+              ))}
+            </div>
+          </InfoTip>
+        </div>
         <div className="flex items-center gap-3">
           <input
             type="text"
@@ -398,55 +455,6 @@ export function ConfigurationView({
           </button>
         </div>
         <p className="mt-2 text-xs text-slate-400">
-          Used both when importing from the Seestar and when analyzing your catalogue's root directory — it defines the
-          folder layout that lays out each object's frames. Use <code className="text-slate-300">/</code> to separate
-          directory levels — each segment becomes one folder.
-        </p>
-
-        <table className="mt-3 w-full text-left text-xs">
-          <thead>
-            <tr className="text-slate-400">
-              <th className="py-1 pr-4 font-medium">Token</th>
-              <th className="py-1 pr-4 font-medium">Means</th>
-              <th className="py-1 font-medium">Example value</th>
-            </tr>
-          </thead>
-          <tbody className="text-slate-300">
-            <tr className="border-t border-white/5">
-              <td className="py-1 pr-4 font-mono text-slate-200">{'{object}'}</td>
-              <td className="py-1 pr-4">Object name, from the source _sub folder</td>
-              <td className="py-1 font-mono">M 51</td>
-            </tr>
-            <tr className="border-t border-white/5">
-              <td className="py-1 pr-4 font-mono text-slate-200">{'{type}'}</td>
-              <td className="py-1 pr-4">Frame type — IRCUT or LP for light frames, or the target name (e.g. Lunar) for Sun/Moon/planet video</td>
-              <td className="py-1 font-mono">LP</td>
-            </tr>
-            <tr className="border-t border-white/5">
-              <td className="py-1 pr-4 font-mono text-slate-200">{'{date}'}</td>
-              <td className="py-1 pr-4">Capture date, formatted YYYY.MM.DD</td>
-              <td className="py-1 font-mono">2026.08.09</td>
-            </tr>
-            <tr className="border-t border-white/5">
-              <td className="py-1 pr-4 font-mono text-slate-200">{'{exposure}'}</td>
-              <td className="py-1 pr-4">Single-frame exposure length</td>
-              <td className="py-1 font-mono">20s</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div className="mt-3 space-y-1 text-xs text-slate-400">
-          <p className="text-slate-300">Examples (for M 51, LP, 2026.08.09, 20s):</p>
-          {PATTERN_EXAMPLES.map((example) => (
-            <p key={example}>
-              <code className="text-slate-300">{example}</code>
-              {' → '}
-              <code className="text-slate-200">{previewPatternPath(example)}</code>
-            </p>
-          ))}
-        </div>
-
-        <p className="mt-3 text-xs text-slate-400">
           Preview with your current pattern:{' '}
           <code className="text-slate-200">
             {targetDirectory ?? '<target directory>'} / {previewPatternPath(directoryPattern)}
@@ -455,7 +463,15 @@ export function ConfigurationView({
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Object images</h2>
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Object images</h2>
+          <InfoTip>
+            A folder of your own object pictures. If it contains a <code className="text-slate-200">.jpg</code> or{' '}
+            <code className="text-slate-200">.png</code> file whose name matches an object (e.g.{' '}
+            <code className="text-slate-200">M 31.jpg</code>), that picture is shown everywhere instead of the
+            Wikipedia thumbnail. Objects without a matching file keep using Wikipedia.
+          </InfoTip>
+        </div>
         <div className="flex items-center gap-3">
           <input
             type="text"
@@ -472,16 +488,15 @@ export function ConfigurationView({
             Browse…
           </button>
         </div>
-        <p className="mt-2 text-xs text-slate-400">
-          A folder of your own object pictures. If it contains a <code className="text-slate-300">.jpg</code> or{' '}
-          <code className="text-slate-300">.png</code> file whose name matches an object (e.g.{' '}
-          <code className="text-slate-300">M 31.jpg</code>), that picture is shown everywhere instead of the
-          Wikipedia thumbnail. Objects without a matching file keep using Wikipedia.
-        </p>
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Thumbnails</h2>
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Thumbnails</h2>
+          <InfoTip>
+            Size of the object pictures in the thumbnail list view, on both the Catalogue and Planning tabs.
+          </InfoTip>
+        </div>
         <label className="flex flex-col gap-1 text-xs text-slate-300">
           Thumbnail size in the thumbnail list view
           <select
@@ -496,18 +511,17 @@ export function ConfigurationView({
             ))}
           </select>
         </label>
-        <p className="mt-2 text-xs text-slate-400">
-          Applies to the thumbnail list on both the Catalogue and Planning tabs.
-        </p>
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Object type labels</h2>
-        <p className="mb-3 text-xs text-slate-400">
-          The small badge on each object showing what it is (Galaxy, Planetary nebula, …), on the object cards and
-          in the object detail window.
-        </p>
-
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Object type labels</h2>
+          <InfoTip>
+            The small badge on each object showing what it is (Galaxy, Planetary nebula, …), on the object cards
+            and in the object detail window. When per-type colours are off, all types share one colour; when on,
+            click a label below to change its colour.
+          </InfoTip>
+        </div>
         <label className="flex items-center gap-2 text-xs text-slate-300">
           <input
             type="checkbox"
@@ -518,10 +532,8 @@ export function ConfigurationView({
           Give each object type its own colour
         </label>
 
-        {objectTypeColorsEnabled ? (
-          <>
-            <p className="mt-4 mb-2 text-xs text-slate-400">Click a label to change its colour.</p>
-            <div className="flex flex-wrap gap-2">
+        {objectTypeColorsEnabled && (
+            <div className="mt-4 flex flex-wrap gap-2">
               {CONFIGURABLE_OBJECT_TYPES.map((type) => (
                 <ObjectTypeColorPicker
                   key={type}
@@ -531,21 +543,23 @@ export function ConfigurationView({
                 />
               ))}
             </div>
-          </>
-        ) : (
-          <p className="mt-3 text-xs text-slate-400">
-            All object types share one colour. Tick the box above to pick a colour per type.
-          </p>
         )}
       </section>
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Alternative names</h2>
-        <p className="mb-3 text-xs text-slate-400">
-          Other catalogue designations of the same object (e.g. <code className="text-slate-300">NGC 224</code> for{' '}
-          <code className="text-slate-300">M 31</code>), shown with the object name on the cards, in the list views
-          and in the object detail window. Searching by name always matches them.
-        </p>
-
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Alternative names</h2>
+          <InfoTip>
+            <p>
+              Other catalogue designations of the same object (e.g. <code className="text-slate-200">NGC 224</code>{' '}
+              for <code className="text-slate-200">M 31</code>), shown with the object name on the cards, in the list
+              views and in the object detail window. Searching by name always matches them.
+            </p>
+            <p className="mt-2">
+              Single line cuts long names off with "…" on the cards and in the list; wrapping shows them all on
+              extra lines. The detail window always shows every name unless they are hidden or in a tooltip.
+            </p>
+          </InfoTip>
+        </div>
         <label className="flex flex-col gap-1 text-xs text-slate-300">
           Show alternative names
           <select
@@ -560,10 +574,6 @@ export function ConfigurationView({
             ))}
           </select>
         </label>
-        <p className="mt-2 text-xs text-slate-400">
-          Single line cuts long names off with "…" on the cards and in the list; wrapping shows them all on extra
-          lines. The detail window always shows every name unless they are hidden or in a tooltip.
-        </p>
       </section>
       </>
       )}
@@ -571,12 +581,13 @@ export function ConfigurationView({
       {activeTab === 'planning' && (
       <>
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Moon Panel</h2>
-        <p className="mb-3 text-xs text-slate-400">
-          Controls the "Next Good Nights" panel on the Catalogue tab, which shows moon illumination and rise/set
-          times.
-        </p>
-
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Moon Panel</h2>
+          <InfoTip>
+            Controls the "Next Good Nights" panel on the Catalogue tab, which shows moon illumination and rise/set
+            times.
+          </InfoTip>
+        </div>
         <label className="mb-4 flex items-center gap-2 text-xs text-slate-300">
           <input
             type="checkbox"
@@ -617,12 +628,19 @@ export function ConfigurationView({
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Moon distance rating</h2>
-        <p className="mb-3 text-xs text-slate-400">
-          Rates each target Bad / Good / Perfect based on how close the Moon comes to it while it's up tonight, used
-          for the Planning card's colored Moon panel and the list/thumbnail views' Moon column.
-        </p>
-
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Moon distance rating</h2>
+          <InfoTip>
+            <p>
+              Rates each target Bad / Good / Perfect based on how close the Moon comes to it while it's up tonight,
+              used for the Planning card's colored Moon panel and the list/thumbnail views' Moon column.
+            </p>
+            <p className="mt-2">
+              Closest approach tonight below "Good starts above" is rated Bad (red); between the two values is
+              rated Good (amber); at or above "Perfect starts above" is rated Perfect (green).
+            </p>
+          </InfoTip>
+        </div>
         <label className="mb-3 flex items-center gap-2 text-xs text-slate-300">
           <input
             type="checkbox"
@@ -661,13 +679,15 @@ export function ConfigurationView({
             />
           </label>
         </div>
-        <p className="mt-2 text-xs text-slate-400">
-          Closest approach tonight below "Good starts above" is rated Bad (red); between the two values is rated
-          Good (amber); at or above "Perfect starts above" is rated Perfect (green).
-        </p>
 
         <label className="mt-4 flex flex-col gap-1 text-xs text-slate-300">
-          Value shown in list &amp; thumbnail views
+          <span className="flex items-center gap-1.5">
+            Value shown in list &amp; thumbnail views
+            <InfoTip>
+              The Planning card always shows every Moon number; the list and thumbnail views only have room for
+              one, and this is also the number used to rate it there.
+            </InfoTip>
+          </span>
           <select
             value={moonListMetric}
             onChange={(e) => onMoonListMetricChange(e.target.value as MoonListMetric)}
@@ -680,20 +700,23 @@ export function ConfigurationView({
             ))}
           </select>
         </label>
-        <p className="mt-2 text-xs text-slate-400">
-          The Planning card always shows every Moon number; the list and thumbnail views only have room for one, and
-          this is also the number used to rate it there.
-        </p>
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Altitude rating</h2>
-        <p className="mb-3 text-xs text-slate-400">
-          Rates each target Bad / Good / Perfect based on its average height above the horizon while it's up
-          tonight, used for the Planning card's colored height panel — higher is better (less atmosphere in the
-          way).
-        </p>
-
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Altitude rating</h2>
+          <InfoTip>
+            <p>
+              Rates each target Bad / Good / Perfect based on its average height above the horizon while it's up
+              tonight, used for the Planning card's colored height panel — higher is better (less atmosphere in the
+              way).
+            </p>
+            <p className="mt-2">
+              Average altitude tonight below "Good starts above" is rated Bad (red); between the two values is
+              rated Good (amber); at or above "Perfect starts above" is rated Perfect (green).
+            </p>
+          </InfoTip>
+        </div>
         <label className="mb-3 flex items-center gap-2 text-xs text-slate-300">
           <input
             type="checkbox"
@@ -732,13 +755,15 @@ export function ConfigurationView({
             />
           </label>
         </div>
-        <p className="mt-2 text-xs text-slate-400">
-          Average altitude tonight below "Good starts above" is rated Bad (red); between the two values is rated
-          Good (amber); at or above "Perfect starts above" is rated Perfect (green).
-        </p>
 
         <label className="mt-4 flex flex-col gap-1 text-xs text-slate-300">
-          Value shown in list &amp; thumbnail views
+          <span className="flex items-center gap-1.5">
+            Value shown in list &amp; thumbnail views
+            <InfoTip>
+              The Planning card always shows both average and max altitude; the list and thumbnail views only have
+              room for one, and this is also the number used to rate it there.
+            </InfoTip>
+          </span>
           <select
             value={altitudeListMetric}
             onChange={(e) => onAltitudeListMetricChange(e.target.value as AltitudeListMetric)}
@@ -751,19 +776,24 @@ export function ConfigurationView({
             ))}
           </select>
         </label>
-        <p className="mt-2 text-xs text-slate-400">
-          The Planning card always shows both average and max altitude; the list and thumbnail views only have room
-          for one, and this is also the number used to rate it there.
-        </p>
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Frame fit rating</h2>
-        <p className="mb-3 text-xs text-slate-400">
-          Rates each target Too small / Good / Good for mosaic / Too big based on what portion of the selected
-          Seestar's frame it fills, used to tint the Planning views' Frame figure.
-        </p>
-
+        <div className="mb-3 flex items-center gap-1.5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Frame fit rating</h2>
+          <InfoTip wide>
+            <p>
+              Rates each target Too small / Good / Good for mosaic / Too big based on what portion of the selected
+              Seestar's frame it fills, used to tint the Planning views' Frame figure.
+            </p>
+            <p className="mt-2">
+              Below "Good starts above" is rated Too small (amber); up to "Good for mosaic starts above" is rated
+              Good (green); up to "Too big starts above" is rated Good for mosaic (blue) — mosaic mode stitches
+              several frames together, so it comfortably covers targets that barely fit a single frame or overflow
+              it a bit; at or above "Too big starts above" is rated Too big even for mosaic (red).
+            </p>
+          </InfoTip>
+        </div>
         <label className="mb-3 flex items-center gap-2 text-xs text-slate-300">
           <input
             type="checkbox"
@@ -812,12 +842,6 @@ export function ConfigurationView({
             />
           </label>
         </div>
-        <p className="mt-2 text-xs text-slate-400">
-          Below "Good starts above" is rated Too small (amber); up to "Good for mosaic starts above" is rated Good
-          (green); up to "Too big starts above" is rated Good for mosaic (blue) — mosaic mode stitches several
-          frames together, so it comfortably covers targets that barely fit a single frame or overflow it a bit; at
-          or above "Too big starts above" is rated Too big even for mosaic (red).
-        </p>
       </section>
       </>
       )}
