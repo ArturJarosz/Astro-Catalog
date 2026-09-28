@@ -12,6 +12,8 @@ import { getObjectWarnings } from '../lib/warnings'
 import type { ObservingLocation } from '../lib/observingLocation'
 import { MoonSeparationDetail } from './MoonSeparationDetail'
 import { FileTypeChips } from './FileTypeChips'
+import { ObjectName } from './ObjectName'
+import type { AlternativeNamesDisplay } from '../lib/alternativeNamesDisplay'
 
 interface ObjectCardProps {
   object: ObjectInfo
@@ -36,6 +38,7 @@ interface ObjectCardProps {
   frameFitMosaicThresholdPercent: number
   frameFitTooBigThresholdPercent: number
   objectTypeColorsEnabled: boolean
+  alternativeNamesDisplay: AlternativeNamesDisplay
   objectTypeColors: Record<string, ObjectTypeColorKey>
 }
 
@@ -62,6 +65,7 @@ export function ObjectCard({
   frameFitTooBigThresholdPercent,
   objectTypeColorsEnabled,
   objectTypeColors,
+  alternativeNamesDisplay,
 }: ObjectCardProps) {
   const grandTotalFrames = object.frameTypes.reduce((sum, ft) => sum + ft.totalFrames, 0)
   const grandTotalExposure = object.frameTypes.reduce((sum, ft) => sum + ft.totalExposureSeconds, 0)
@@ -93,10 +97,7 @@ export function ObjectCard({
       className="cursor-pointer rounded-lg border border-white/20 bg-slate-800 p-3 shadow-md transition hover:border-white/30 hover:bg-slate-700"
     >
       <h3 className="mb-2 flex min-w-0 items-center gap-1.5 text-sm font-semibold text-slate-100">
-        <span className="truncate">
-          {object.name}
-          {object.isMosaic && <span className="text-slate-300"> (Mosaic)</span>}
-        </span>
+        <ObjectName object={object} alternativeNamesDisplay={alternativeNamesDisplay} />
         {objectTypeLabel && (
           <span
             className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${objectTypeBadgeClasses(

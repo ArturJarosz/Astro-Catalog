@@ -6,6 +6,8 @@ import type { AltitudeListMetric, MoonListMetric, NightMoonTrackSample } from '.
 import type { ObjectTypeColorKey } from '../lib/objectTypeColor'
 import type { SeestarModel } from '../lib/seestarModel'
 import type { ObservingLocation } from '../lib/observingLocation'
+import type { AlternativeNamesDisplay } from '../lib/alternativeNamesDisplay'
+import type { ThumbnailSize } from '../lib/thumbnailSize'
 import { ObjectCard } from './ObjectCard'
 import { ObjectListTable } from './ObjectListTable'
 import type { ViewMode } from './ViewToggle'
@@ -36,6 +38,8 @@ interface ObjectGroupsGridProps {
   frameFitTooBigThresholdPercent: number
   imagesPath: string
   objectTypeColorsEnabled: boolean
+  alternativeNamesDisplay: AlternativeNamesDisplay
+  thumbnailSize: ThumbnailSize
   objectTypeColors: Record<string, ObjectTypeColorKey>
   /** localStorage key under which this list remembers its collapsed catalog groups. */
   collapseStorageKey: string
@@ -74,6 +78,8 @@ export function ObjectGroupsGrid({
   imagesPath,
   objectTypeColorsEnabled,
   objectTypeColors,
+  alternativeNamesDisplay,
+  thumbnailSize,
   collapseStorageKey,
 }: ObjectGroupsGridProps) {
   const { collapsedCatalogs, toggleCatalog } = useCollapsedCatalogs(collapseStorageKey)
@@ -152,6 +158,7 @@ export function ObjectGroupsGrid({
                     frameFitTooBigThresholdPercent={frameFitTooBigThresholdPercent}
                     objectTypeColorsEnabled={objectTypeColorsEnabled}
                     objectTypeColors={objectTypeColors}
+                    alternativeNamesDisplay={alternativeNamesDisplay}
                   />
                 ))}
               </div>
@@ -181,6 +188,8 @@ export function ObjectGroupsGrid({
                 frameFitMosaicThresholdPercent={frameFitMosaicThresholdPercent}
                 frameFitTooBigThresholdPercent={frameFitTooBigThresholdPercent}
                 imagesPath={imagesPath}
+                alternativeNamesDisplay={alternativeNamesDisplay}
+                thumbnailSize={thumbnailSize}
               />
             )}
           </section>

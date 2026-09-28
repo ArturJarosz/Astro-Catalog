@@ -32,6 +32,7 @@ import {
   type MoonListMetric,
 } from './lib/moonSeparation'
 import { summarizeObjects } from './lib/catalogueSummary'
+import { type AlternativeNamesDisplay, parseAlternativeNamesDisplay } from './lib/alternativeNamesDisplay'
 import { findDuplicateTargetGroups } from './lib/duplicateTargets'
 import { DEEP_SKY_CATALOGS } from './lib/objectCoordinates'
 import { OBSERVING_LOCATION_STORAGE_KEY, type ObservingLocation } from './lib/observingLocation'
@@ -40,6 +41,7 @@ import type { ObjectTypeColorKey } from './lib/objectTypeColor'
 import { getProposedObjects } from './lib/proposedObjects'
 import { DEFAULT_SEESTAR_MODEL, type SeestarModel } from './lib/seestarModel'
 import type { SortDirection, SortKey } from './lib/sortObjects'
+import { parseThumbnailSize, type ThumbnailSize } from './lib/thumbnailSize'
 
 export type ConnectionStatus = 'checking' | 'connected' | 'disconnected'
 
@@ -260,6 +262,26 @@ export default function App() {
   function handlePlanningSeestarModelChange(model: SeestarModel) {
     setPlanningSeestarModel(model)
     localStorage.setItem('planningSeestarModel', model)
+  }
+
+  // Other catalogue designations (e.g. "NGC 224" for M 31) shown next to object names.
+  const [alternativeNamesDisplay, setAlternativeNamesDisplay] = useState<AlternativeNamesDisplay>(() =>
+    parseAlternativeNamesDisplay(localStorage.getItem('alternativeNamesDisplay')),
+  )
+
+  function handleAlternativeNamesDisplayChange(display: AlternativeNamesDisplay) {
+    setAlternativeNamesDisplay(display)
+    localStorage.setItem('alternativeNamesDisplay', display)
+  }
+
+  // Size of the pictures in the thumbnail list view.
+  const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>(() =>
+    parseThumbnailSize(localStorage.getItem('thumbnailSize')),
+  )
+
+  function handleThumbnailSizeChange(size: ThumbnailSize) {
+    setThumbnailSize(size)
+    localStorage.setItem('thumbnailSize', size)
   }
 
   // Object type labels (Galaxy, Nebula, …) are one colour by default; switching this on
@@ -700,6 +722,10 @@ export default function App() {
             onObjectTypeColorsEnabledChange={handleObjectTypeColorsEnabledChange}
             objectTypeColors={objectTypeColors}
             onObjectTypeColorChange={handleObjectTypeColorChange}
+            alternativeNamesDisplay={alternativeNamesDisplay}
+            onAlternativeNamesDisplayChange={handleAlternativeNamesDisplayChange}
+            thumbnailSize={thumbnailSize}
+            onThumbnailSizeChange={handleThumbnailSizeChange}
           />
         ) : (
         <>
@@ -813,6 +839,8 @@ export default function App() {
                     frameFitTooBigThresholdPercent={frameFitTooBigThresholdPercent}
                     imagesPath={objectImagesPath}
                     objectTypeColorsEnabled={objectTypeColorsEnabled}
+                    alternativeNamesDisplay={alternativeNamesDisplay}
+                    thumbnailSize={thumbnailSize}
                     objectTypeColors={objectTypeColors}
                     collapseStorageKey="collapsedCatalogs.planningCatalogued"
                   />
@@ -875,6 +903,8 @@ export default function App() {
                     frameFitTooBigThresholdPercent={frameFitTooBigThresholdPercent}
                     imagesPath={objectImagesPath}
                     objectTypeColorsEnabled={objectTypeColorsEnabled}
+                    alternativeNamesDisplay={alternativeNamesDisplay}
+                    thumbnailSize={thumbnailSize}
                     objectTypeColors={objectTypeColors}
                     collapseStorageKey="collapsedCatalogs.planningProposals"
                   />
@@ -915,6 +945,8 @@ export default function App() {
               frameFitTooBigThresholdPercent={frameFitTooBigThresholdPercent}
               imagesPath={objectImagesPath}
               objectTypeColorsEnabled={objectTypeColorsEnabled}
+              alternativeNamesDisplay={alternativeNamesDisplay}
+              thumbnailSize={thumbnailSize}
               objectTypeColors={objectTypeColors}
               collapseStorageKey="collapsedCatalogs.catalogue"
             />
@@ -978,6 +1010,7 @@ export default function App() {
           frameFitTooBigThresholdPercent={frameFitTooBigThresholdPercent}
           imagesPath={objectImagesPath}
           objectTypeColorsEnabled={objectTypeColorsEnabled}
+          alternativeNamesDisplay={alternativeNamesDisplay}
           objectTypeColors={objectTypeColors}
           onRename={() => setRenamingObject(selectedObject)}
           onClose={() => setSelectedObject(null)}

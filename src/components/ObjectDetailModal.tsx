@@ -15,6 +15,8 @@ import type { SeestarModel } from '../lib/seestarModel'
 import { useObjectImage } from '../lib/useObjectImage'
 import { getObjectWarnings } from '../lib/warnings'
 import { FileTypeChips } from './FileTypeChips'
+import { ObjectName } from './ObjectName'
+import type { AlternativeNamesDisplay } from '../lib/alternativeNamesDisplay'
 
 interface ObjectDetailModalProps {
   object: ObjectInfo
@@ -28,6 +30,7 @@ interface ObjectDetailModalProps {
   frameFitTooBigThresholdPercent: number
   imagesPath: string
   objectTypeColorsEnabled: boolean
+  alternativeNamesDisplay: AlternativeNamesDisplay
   objectTypeColors: Record<string, ObjectTypeColorKey>
   onRename?: () => void
   onClose: () => void
@@ -51,6 +54,7 @@ export function ObjectDetailModal({
   imagesPath,
   objectTypeColorsEnabled,
   objectTypeColors,
+  alternativeNamesDisplay,
   onRename,
   onClose,
 }: ObjectDetailModalProps) {
@@ -121,7 +125,14 @@ export function ObjectDetailModal({
       >
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-slate-100">{object.name}</h2>
+            <h2 className="text-lg font-semibold text-slate-100">
+              {/* The header has room for every name, so single-line mode shows them in full here too. */}
+              <ObjectName
+                object={object}
+                alternativeNamesDisplay={alternativeNamesDisplay === 'inline' ? 'wrap' : alternativeNamesDisplay}
+                showMosaic={false}
+              />
+            </h2>
             {objectWarnings.length > 0 && (
               <span
                 className="text-amber-400"
