@@ -11,7 +11,10 @@ import { getObjectWarnings } from '../lib/warnings'
 import type { ObservingLocation } from '../lib/observingLocation'
 import { MoonSeparationCells } from './MoonSeparationCells'
 import { ObjectThumbnail } from './ObjectThumbnail'
+import { THUMBNAIL_SIZE_PX, type ThumbnailSize } from '../lib/thumbnailSize'
 import { FileTypeChips } from './FileTypeChips'
+import { ObjectName } from './ObjectName'
+import type { AlternativeNamesDisplay } from '../lib/alternativeNamesDisplay'
 
 interface ObjectListTableProps {
   objects: ObjectInfo[]
@@ -41,6 +44,8 @@ interface ObjectListTableProps {
   frameFitGoodThresholdPercent: number
   frameFitMosaicThresholdPercent: number
   frameFitTooBigThresholdPercent: number
+  alternativeNamesDisplay: AlternativeNamesDisplay
+  thumbnailSize: ThumbnailSize
 }
 
 export function ObjectListTable({
@@ -68,6 +73,8 @@ export function ObjectListTable({
   frameFitGoodThresholdPercent,
   frameFitMosaicThresholdPercent,
   frameFitTooBigThresholdPercent,
+  alternativeNamesDisplay,
+  thumbnailSize,
 }: ObjectListTableProps) {
   const frameTypeNames = isPlanning
     ? []
@@ -80,7 +87,7 @@ export function ObjectListTable({
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-white/10 bg-white/5 text-xs uppercase tracking-wide text-slate-300">
-            {showThumbnails && <th className="w-10 px-3 py-2"></th>}
+            {showThumbnails && <th className="px-3 py-2" style={{ width: THUMBNAIL_SIZE_PX[thumbnailSize] }}></th>}
             <th className="px-3 py-2 text-left font-medium">Object</th>
             {isPlanning ? (
               <>
@@ -133,16 +140,13 @@ export function ObjectListTable({
               >
                 {showThumbnails && (
                   <td className="px-3 py-2">
-                    <ObjectThumbnail object={object} imagesPath={imagesPath} />
+                    <ObjectThumbnail object={object} imagesPath={imagesPath} size={thumbnailSize} />
                   </td>
                 )}
                 <td className="px-3 py-2">
                   <span className="flex min-w-0 flex-col gap-1">
                   <span className="flex min-w-0 items-center gap-1.5 font-semibold text-slate-100">
-                    <span className="truncate">
-                      {object.name}
-                      {object.isMosaic && <span className="text-slate-300"> (Mosaic)</span>}
-                    </span>
+                    <ObjectName object={object} alternativeNamesDisplay={alternativeNamesDisplay} />
                     {objectWarnings.length > 0 && (
                       <span
                         className="flex shrink-0 items-center gap-0.5 text-xs text-amber-400"

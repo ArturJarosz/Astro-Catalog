@@ -1,5 +1,5 @@
 import type { ObjectInfo } from '../../electron/shared-types'
-import { getObjectCoordinates } from './objectCoordinates'
+import { coordinatesKey, getObjectCoordinates } from './objectCoordinates'
 
 export interface DuplicateTargetGroup {
   /** Two or more catalogued folders that resolve to the same physical target. */
@@ -18,7 +18,7 @@ export interface DuplicateTargetGroup {
 export function coordinateKey(object: ObjectInfo): string | null {
   const coordinates = getObjectCoordinates(object.catalog, object.catalogNumber)
   if (!coordinates) return null
-  return `${coordinates.raDeg.toFixed(3)}:${coordinates.decDeg.toFixed(3)}`
+  return coordinatesKey(coordinates)
 }
 
 class UnionFind {

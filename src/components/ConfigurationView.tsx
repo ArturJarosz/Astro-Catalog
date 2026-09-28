@@ -11,7 +11,12 @@ import {
   type MoonListMetric,
 } from '../lib/moonSeparation'
 import type { ObservingLocation } from '../lib/observingLocation'
+import {
+  ALTERNATIVE_NAMES_DISPLAY_LABELS,
+  type AlternativeNamesDisplay,
+} from '../lib/alternativeNamesDisplay'
 import { labelForObjectType } from '../lib/objectType'
+import { THUMBNAIL_SIZE_LABELS, type ThumbnailSize } from '../lib/thumbnailSize'
 import { ObjectTypeColorPicker } from './ObjectTypeColorPicker'
 import {
   CONFIGURABLE_OBJECT_TYPES,
@@ -65,6 +70,10 @@ interface ConfigurationViewProps {
   onObjectTypeColorsEnabledChange: (enabled: boolean) => void
   objectTypeColors: Record<string, ObjectTypeColorKey>
   onObjectTypeColorChange: (type: string, color: ObjectTypeColorKey) => void
+  alternativeNamesDisplay: AlternativeNamesDisplay
+  onAlternativeNamesDisplayChange: (display: AlternativeNamesDisplay) => void
+  thumbnailSize: ThumbnailSize
+  onThumbnailSizeChange: (size: ThumbnailSize) => void
 }
 
 type ConfigTab = 'general' | 'planning'
@@ -145,6 +154,10 @@ export function ConfigurationView({
   onObjectTypeColorsEnabledChange,
   objectTypeColors,
   onObjectTypeColorChange,
+  alternativeNamesDisplay,
+  onAlternativeNamesDisplayChange,
+  thumbnailSize,
+  onThumbnailSizeChange,
 }: ConfigurationViewProps) {
   const [activeTab, setActiveTab] = useState<ConfigTab>('general')
   const [latInput, setLatInput] = useState(observingLocation ? String(observingLocation.latitude) : '')
@@ -468,6 +481,27 @@ export function ConfigurationView({
       </section>
 
       <section className="rounded-xl border border-white/10 p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Thumbnails</h2>
+        <label className="flex flex-col gap-1 text-xs text-slate-300">
+          Thumbnail size in the thumbnail list view
+          <select
+            value={thumbnailSize}
+            onChange={(e) => onThumbnailSizeChange(e.target.value as ThumbnailSize)}
+            className="w-72 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-slate-200 focus:border-white/20 focus:outline-none"
+          >
+            {(Object.keys(THUMBNAIL_SIZE_LABELS) as ThumbnailSize[]).map((size) => (
+              <option key={size} value={size} className="bg-slate-800">
+                {THUMBNAIL_SIZE_LABELS[size]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="mt-2 text-xs text-slate-400">
+          Applies to the thumbnail list on both the Catalogue and Planning tabs.
+        </p>
+      </section>
+
+      <section className="rounded-xl border border-white/10 p-4">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Object type labels</h2>
         <p className="mb-3 text-xs text-slate-400">
           The small badge on each object showing what it is (Galaxy, Planetary nebula, …), on the object cards and
@@ -503,6 +537,33 @@ export function ConfigurationView({
             All object types share one colour. Tick the box above to pick a colour per type.
           </p>
         )}
+      </section>
+      <section className="rounded-xl border border-white/10 p-4">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Alternative names</h2>
+        <p className="mb-3 text-xs text-slate-400">
+          Other catalogue designations of the same object (e.g. <code className="text-slate-300">NGC 224</code> for{' '}
+          <code className="text-slate-300">M 31</code>), shown with the object name on the cards, in the list views
+          and in the object detail window. Searching by name always matches them.
+        </p>
+
+        <label className="flex flex-col gap-1 text-xs text-slate-300">
+          Show alternative names
+          <select
+            value={alternativeNamesDisplay}
+            onChange={(e) => onAlternativeNamesDisplayChange(e.target.value as AlternativeNamesDisplay)}
+            className="w-72 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-slate-200 focus:border-white/20 focus:outline-none"
+          >
+            {(Object.keys(ALTERNATIVE_NAMES_DISPLAY_LABELS) as AlternativeNamesDisplay[]).map((display) => (
+              <option key={display} value={display} className="bg-slate-800">
+                {ALTERNATIVE_NAMES_DISPLAY_LABELS[display]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="mt-2 text-xs text-slate-400">
+          Single line cuts long names off with "…" on the cards and in the list; wrapping shows them all on extra
+          lines. The detail window always shows every name unless they are hidden or in a tooltip.
+        </p>
       </section>
       </>
       )}

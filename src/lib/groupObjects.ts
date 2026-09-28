@@ -1,4 +1,5 @@
 import type { ObjectInfo } from '../../electron/shared-types'
+import { getAlternativeNames } from './objectCoordinates'
 import { compareObjects, type SortDirection, type SortKey } from './sortObjects'
 
 const CATALOG_ORDER = ['Messier', 'Caldwell', 'NGC', 'IC', 'Abell', 'Other']
@@ -69,7 +70,11 @@ export function buildFilteredSortedGroups(objects: ObjectInfo[], options: GroupF
       : visibleGroups
           .map((group) => ({
             ...group,
-            objects: group.objects.filter((o) => o.name.toLowerCase().includes(normalizedFilter)),
+            objects: group.objects.filter((o) =>
+              [o.name, ...getAlternativeNames(o.catalog, o.catalogNumber)].some((name) =>
+                name.toLowerCase().includes(normalizedFilter),
+              ),
+            ),
           }))
           .filter((group) => group.objects.length > 0)
 
