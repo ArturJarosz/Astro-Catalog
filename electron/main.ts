@@ -1,7 +1,7 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { initDb, getLastRoot, saveCatalogue, loadCatalogue, updateCatalogueDirectories } from './db'
 import { scanRoot, scanDirectories } from './scanner'
 import { topLevelName } from './directory-pattern'
@@ -15,6 +15,8 @@ import {
   listObjectImages,
   relocateObjectImages,
   LOCAL_OBJECT_IMAGE_EXTENSIONS,
+  OBJECT_IMAGE_SCHEME,
+  objectImagePathFromUrl,
   setPrimaryObjectImage,
 } from './object-images'
 import type { CurrentLocationResult, MergeMoveItem, ObjectSummary, SeestarCopyItem } from './shared-types'
@@ -416,8 +418,18 @@ ipcMain.handle('open-external', async (_event, url: string) => {
   await shell.openExternal(url)
 })
 
+protocol.registerSchemesAsPrivileged([
+  { scheme: OBJECT_IMAGE_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
+])
+
 app.whenReady().then(() => {
   initDb()
+  // Serves the user's object pictures (see OBJECT_IMAGE_SCHEME); only image files are exposed.
+  protocol.handle(OBJECT_IMAGE_SCHEME, (request) => {
+    const filePath = objectImagePathFromUrl(request.url)
+    if (!filePath) return new Response('Not found', { status: 404 })
+    return net.fetch(pathToFileURL(filePath).href)
+  })
   createWindow()
 
   app.on('activate', () => {
