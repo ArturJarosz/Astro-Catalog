@@ -1,8 +1,10 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import type { ObjectInfo, ObjectSummary } from '../../electron/shared-types'
+import type { ObjectImageDisplay, ObjectInfo, ObjectSummary } from '../../electron/shared-types'
 
 export interface ObjectImageResult {
   imageUrl: string | null
+  /** How the user chose to show their own picture; undefined for Wikipedia pictures. */
+  imageDisplay: ObjectImageDisplay | undefined
   summary: ObjectSummary | null
   loading: boolean
 }
@@ -34,7 +36,7 @@ export function useObjectImagesVersion(): number {
  * ObjectThumbnail and ObjectDetailModal so both surfaces resolve images the same way.
  */
 export function useObjectImage(object: ObjectInfo, imagesPath: string, needsSummary: boolean): ObjectImageResult {
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [image, setImage] = useState<{ url: string; display?: ObjectImageDisplay } | null>(null)
   const [summary, setSummary] = useState<ObjectSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const imagesVersion = useObjectImagesVersion()
@@ -42,17 +44,17 @@ export function useObjectImage(object: ObjectInfo, imagesPath: string, needsSumm
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    setImageUrl(null)
+    setImage(null)
     setSummary(null)
 
     async function load() {
-      const localImageUrl = imagesPath
+      const localImage = imagesPath
         ? await window.astroCatalogue.getLocalObjectImage(imagesPath, object.name).catch(() => null)
         : null
       if (cancelled) return
 
-      if (localImageUrl && !needsSummary) {
-        setImageUrl(localImageUrl)
+      if (localImage && !needsSummary) {
+        setImage(localImage)
         setLoading(false)
         return
       }
@@ -63,7 +65,8 @@ export function useObjectImage(object: ObjectInfo, imagesPath: string, needsSumm
       if (cancelled) return
 
       setSummary(fetchedSummary)
-      setImageUrl(localImageUrl ?? fetchedSummary?.thumbnailUrl ?? null)
+      const wikipediaUrl = fetchedSummary?.thumbnailUrl
+      setImage(localImage ?? (wikipediaUrl ? { url: wikipediaUrl } : null))
       setLoading(false)
     }
 
@@ -73,5 +76,5 @@ export function useObjectImage(object: ObjectInfo, imagesPath: string, needsSumm
     }
   }, [object.name, object.catalog, object.catalogNumber, imagesPath, needsSummary, imagesVersion])
 
-  return { imageUrl, summary, loading }
+  return { imageUrl: image?.url ?? null, imageDisplay: image?.display, summary, loading }
 }

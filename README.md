@@ -125,7 +125,10 @@ under the object's name: the first one becomes `M 31.jpg` and later ones become
 `M 31(2).jpg`, `M 31(3).jpg`, …. The file named exactly after the object is the
 thumbnail shown everywhere instead of Wikipedia's. **Use as thumbnail** swaps
 file names with it, and **Delete** moves a picture to the OS trash (if it was
-the thumbnail, the lowest-numbered remaining picture takes over). Renaming or
+the thumbnail, the lowest-numbered remaining picture takes over). **Crop…**
+shows a picture whole or lets you drag and zoom to pick the square part that is
+shown; the choice is kept per picture in `.astro-catalogue-images.json` inside the
+images folder, and the original files are never changed. Renaming or
 merging an object carries its pictures over to the new name, numbered after
 any pictures the target already has (they are copied instead of moved while a
 `_mosaic` sibling still uses the old name).

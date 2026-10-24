@@ -11,12 +11,13 @@ import { buildRenamePlan, executeRename } from './rename'
 import {
   addObjectImages,
   deleteObjectImage,
-  getPrimaryObjectImageUrl,
+  getPrimaryObjectImage,
   listObjectImages,
   relocateObjectImages,
   LOCAL_OBJECT_IMAGE_EXTENSIONS,
   OBJECT_IMAGE_SCHEME,
   objectImagePathFromUrl,
+  setObjectImageDisplay,
   setPrimaryObjectImage,
 } from './object-images'
 import type { CurrentLocationResult, MergeMoveItem, ObjectSummary, SeestarCopyItem } from './shared-types'
@@ -166,7 +167,7 @@ ipcMain.handle('select-object-images-dir', async () => {
 })
 
 ipcMain.handle('get-local-object-image', (_event, imagesPath: string, objectName: string) =>
-  getPrimaryObjectImageUrl(imagesPath, objectName),
+  getPrimaryObjectImage(imagesPath, objectName),
 )
 
 ipcMain.handle('list-object-images', (_event, imagesPath: string, objectName: string) =>
@@ -192,6 +193,12 @@ ipcMain.handle('set-primary-object-image', (_event, imagesPath: string, objectNa
 
 ipcMain.handle('delete-object-image', (_event, imagesPath: string, objectName: string, fileName: string) =>
   deleteObjectImage(imagesPath, objectName, fileName, (filePath) => shell.trashItem(filePath)),
+)
+
+ipcMain.handle(
+  'set-object-image-display',
+  (_event, imagesPath: string, objectName: string, fileName: string, display: unknown) =>
+    setObjectImageDisplay(imagesPath, objectName, fileName, display),
 )
 
 ipcMain.handle(

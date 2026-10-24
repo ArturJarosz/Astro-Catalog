@@ -17,6 +17,7 @@ import { getObjectWarnings } from '../lib/warnings'
 import { FileTypeChips } from './FileTypeChips'
 import { ObjectName } from './ObjectName'
 import { ObjectImagesPanel } from './ObjectImagesPanel'
+import { ObjectImageView } from './ObjectImageView'
 import type { AlternativeNamesDisplay } from '../lib/alternativeNamesDisplay'
 
 interface ObjectDetailModalProps {
@@ -59,7 +60,7 @@ export function ObjectDetailModal({
   onRename,
   onClose,
 }: ObjectDetailModalProps) {
-  const { imageUrl, summary, loading: loadingSummary } = useObjectImage(object, imagesPath, true)
+  const { imageUrl, imageDisplay, summary, loading: loadingSummary } = useObjectImage(object, imagesPath, true)
   // A picture from "My images" clicked to view it in the main slot instead of the thumbnail.
   // Keyed by object name so a preview never leaks onto another object.
   const [preview, setPreview] = useState<{ objectName: string; image: ObjectImageEntry | null }>({
@@ -72,6 +73,7 @@ export function ObjectDetailModal({
     [object.name],
   )
   const shownImageUrl = previewImage?.url ?? imageUrl
+  const shownImageDisplay = previewImage ? previewImage.display : imageDisplay
   const objectWarnings = getObjectWarnings(object, warnings)
 
   const coordinates = useMemo(() => getObjectCoordinates(object.catalog, object.catalogNumber), [object.catalog, object.catalogNumber])
@@ -206,7 +208,7 @@ export function ObjectDetailModal({
           <div className="flex w-full shrink-0 flex-col gap-3 sm:w-96">
             <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-black/30">
               {shownImageUrl ? (
-                <img src={shownImageUrl} alt={object.name} className="h-full w-full object-cover" />
+                <ObjectImageView url={shownImageUrl} alt={object.name} display={shownImageDisplay} />
               ) : loadingSummary ? (
                 <span className="text-xs text-slate-400">Loading…</span>
               ) : (

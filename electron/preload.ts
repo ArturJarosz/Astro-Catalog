@@ -3,6 +3,7 @@ import type {
   AstroCatalogueApi,
   MergeMoveItem,
   MergeProgress,
+  ObjectImageDisplay,
   ScanProgress,
   SeestarCopyItem,
   SeestarCopyProgress,
@@ -43,6 +44,8 @@ const api: AstroCatalogueApi = {
     ipcRenderer.invoke('set-primary-object-image', imagesPath, objectName, fileName),
   deleteObjectImage: (imagesPath: string, objectName: string, fileName: string) =>
     ipcRenderer.invoke('delete-object-image', imagesPath, objectName, fileName),
+  setObjectImageDisplay: (imagesPath: string, objectName: string, fileName: string, display: ObjectImageDisplay) =>
+    ipcRenderer.invoke('set-object-image-display', imagesPath, objectName, fileName, display),
   relocateObjectImages: (imagesPath: string, fromName: string, toName: string, keepSource: boolean) =>
     ipcRenderer.invoke('relocate-object-images', imagesPath, fromName, toName, keepSource),
   buildSeestarCopyPlan: (
