@@ -59,6 +59,16 @@ export interface ObjectSummary {
   pageUrl: string | null
 }
 
+/** One user-provided picture of an object in the Object images folder (`electron/object-images.ts`). */
+export interface ObjectImageEntry {
+  fileName: string
+  url: string
+  /** 0 for `<object>.<ext>`, N for `<object>(N).<ext>`. */
+  index: number
+  /** The picture used as the object's thumbnail. */
+  isPrimary: boolean
+}
+
 export const DEFAULT_SEESTAR_DIRECTORY_PATTERN = '{object}/{type}/{date} {type} {exposure}'
 
 export const DEFAULT_SEESTAR_SOURCE_DIR_WINDOWS = String.raw`\\seestar\EMMC Images\MyWorks`
@@ -216,6 +226,12 @@ export interface AstroCatalogueApi {
   selectSeestarTargetDir: () => Promise<string | null>
   selectObjectImagesDir: () => Promise<string | null>
   getLocalObjectImage: (imagesPath: string, objectName: string) => Promise<string | null>
+  listObjectImages: (imagesPath: string, objectName: string) => Promise<ObjectImageEntry[]>
+  selectObjectImageFiles: () => Promise<string[]>
+  addObjectImages: (imagesPath: string, objectName: string, sourcePaths: string[]) => Promise<string[]>
+  setPrimaryObjectImage: (imagesPath: string, objectName: string, fileName: string) => Promise<void>
+  deleteObjectImage: (imagesPath: string, objectName: string, fileName: string) => Promise<void>
+  relocateObjectImages: (imagesPath: string, fromName: string, toName: string, keepSource: boolean) => Promise<string[]>
   buildSeestarCopyPlan: (
     subDirNames: string[],
     targetDirectory: string,

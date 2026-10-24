@@ -469,7 +469,9 @@ export function ConfigurationView({
             A folder of your own object pictures. If it contains a <code className="text-slate-200">.jpg</code> or{' '}
             <code className="text-slate-200">.png</code> file whose name matches an object (e.g.{' '}
             <code className="text-slate-200">M 31.jpg</code>), that picture is shown everywhere instead of the
-            Wikipedia thumbnail. Objects without a matching file keep using Wikipedia.
+            Wikipedia thumbnail. Objects without a matching file keep using Wikipedia. Further pictures are named{' '}
+            <code className="text-slate-200">M 31(2).jpg</code>, <code className="text-slate-200">M 31(3).jpg</code>, …
+            Upload, delete or pick the thumbnail from the object's detail window (My images).
           </InfoTip>
         </div>
         <div className="flex items-center gap-3">

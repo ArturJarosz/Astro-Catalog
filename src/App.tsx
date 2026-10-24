@@ -964,6 +964,7 @@ export default function App() {
           rootPath={catalogue.rootPath}
           directoryPattern={directoryPattern}
           allObjects={catalogue.objects}
+          imagesPath={objectImagesPath}
           manualLinks={manualTargetLinks}
           onAddManualLink={handleAddManualLink}
           onRemoveManualLink={handleRemoveManualLink}
@@ -987,8 +988,11 @@ export default function App() {
           object={renamingObject}
           rootPath={catalogue.rootPath}
           directoryPattern={directoryPattern}
-          onRenamed={async (affectedTopLevelNames) => {
+          imagesPath={objectImagesPath}
+          allObjects={catalogue.objects}
+          onRenamed={async (affectedTopLevelNames, keepOpen) => {
             await handleAnalyzeDirectories(affectedTopLevelNames)
+            if (keepOpen) return
             setRenamingObject(null)
             setSelectedObject(null)
           }}
