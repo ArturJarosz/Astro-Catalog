@@ -7,13 +7,20 @@ import {
   type RenamePlan,
 } from '../../electron/shared-types'
 import { formatSize } from '../lib/format'
+import { relocateObjectImagesAfterMove } from '../lib/relocateObjectImages'
 
 interface RenameObjectModalProps {
   object: ObjectInfo
   rootPath: string
   directoryPattern: string
-  /** Re-analyse the given root-level folders after the rename so the catalogue reflects it. */
-  onRenamed: (affectedTopLevelNames: string[]) => Promise<void>
+  /** Configured Object images folder; the object's pictures follow the rename. */
+  imagesPath: string
+  allObjects: ObjectInfo[]
+  /**
+   * Re-analyse the given root-level folders after the rename so the catalogue reflects it.
+   * `keepOpen` asks the parent not to close the modal, so an error message stays visible.
+   */
+  onRenamed: (affectedTopLevelNames: string[], keepOpen: boolean) => Promise<void>
   onClose: () => void
 }
 
@@ -23,6 +30,8 @@ export function RenameObjectModal({
   object,
   rootPath,
   directoryPattern,
+  imagesPath,
+  allObjects,
   onRenamed,
   onClose,
 }: RenameObjectModalProps) {
@@ -95,7 +104,9 @@ export function RenameObjectModal({
       const renameResult = await window.astroCatalogue.executeRename(plan.items, [object.path])
       setResult(renameResult)
       setDone(true)
-      await onRenamed(plan.affectedTopLevelNames)
+      const imagesError = await relocateObjectImagesAfterMove(imagesPath, [object], trimmed, allObjects)
+      if (imagesError) setError(imagesError)
+      await onRenamed(plan.affectedTopLevelNames, imagesError !== null)
     } catch (e) {
       setError(String(e))
     } finally {

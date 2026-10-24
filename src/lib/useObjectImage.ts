@@ -1,10 +1,31 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import type { ObjectInfo, ObjectSummary } from '../../electron/shared-types'
 
 export interface ObjectImageResult {
   imageUrl: string | null
   summary: ObjectSummary | null
   loading: boolean
+}
+
+// Bumped whenever the user adds, deletes or re-orders object pictures, so every mounted
+// thumbnail / card / detail modal re-resolves its image without a reload.
+let objectImagesVersion = 0
+const objectImagesListeners = new Set<() => void>()
+
+export function notifyObjectImagesChanged() {
+  objectImagesVersion += 1
+  objectImagesListeners.forEach((listener) => listener())
+}
+
+function subscribeObjectImages(listener: () => void) {
+  objectImagesListeners.add(listener)
+  return () => {
+    objectImagesListeners.delete(listener)
+  }
+}
+
+export function useObjectImagesVersion(): number {
+  return useSyncExternalStore(subscribeObjectImages, () => objectImagesVersion)
 }
 
 /**
@@ -16,6 +37,7 @@ export function useObjectImage(object: ObjectInfo, imagesPath: string, needsSumm
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [summary, setSummary] = useState<ObjectSummary | null>(null)
   const [loading, setLoading] = useState(true)
+  const imagesVersion = useObjectImagesVersion()
 
   useEffect(() => {
     let cancelled = false
@@ -49,7 +71,7 @@ export function useObjectImage(object: ObjectInfo, imagesPath: string, needsSumm
     return () => {
       cancelled = true
     }
-  }, [object.name, object.catalog, object.catalogNumber, imagesPath, needsSummary])
+  }, [object.name, object.catalog, object.catalogNumber, imagesPath, needsSummary, imagesVersion])
 
   return { imageUrl, summary, loading }
 }

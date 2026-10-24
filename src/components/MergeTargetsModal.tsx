@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import type { MergePlan, MergeProgress, MergeResult, ObjectInfo } from '../../electron/shared-types'
 import { defaultMainObject, type DuplicateTargetGroup } from '../lib/duplicateTargets'
 import { formatExposure, formatSize } from '../lib/format'
+import { relocateObjectImagesAfterMove } from '../lib/relocateObjectImages'
 
 interface MergeTargetsModalProps {
   groups: DuplicateTargetGroup[]
   rootPath: string
   directoryPattern: string
   allObjects: ObjectInfo[]
+  /** Configured Object images folder; pictures of merged objects follow them. */
+  imagesPath: string
   manualLinks: string[][]
   onAddManualLink: (paths: string[]) => void
   onRemoveManualLink: (index: number) => void
@@ -34,11 +37,15 @@ function GroupMergeCard({
   group,
   rootPath,
   directoryPattern,
+  imagesPath,
+  allObjects,
   onMerged,
 }: {
   group: DuplicateTargetGroup
   rootPath: string
   directoryPattern: string
+  imagesPath: string
+  allObjects: ObjectInfo[]
   onMerged: (affectedTopLevelNames: string[]) => Promise<void>
 }) {
   const [mainPath, setMainPath] = useState(() => defaultMainObject(group.objects).path)
@@ -111,6 +118,11 @@ function GroupMergeCard({
       )
       setResult(mergeResult)
       setDone(true)
+      const mainObject = group.objects.find((object) => object.path === mainPath)
+      if (mainObject) {
+        const imagesError = await relocateObjectImagesAfterMove(imagesPath, otherObjects, mainObject.name, allObjects)
+        if (imagesError) setError(imagesError)
+      }
       await onMerged(plan.affectedTopLevelNames)
     } catch (e) {
       setError(String(e))
@@ -341,6 +353,7 @@ export function MergeTargetsModal({
   rootPath,
   directoryPattern,
   allObjects,
+  imagesPath,
   manualLinks,
   onAddManualLink,
   onRemoveManualLink,
@@ -387,6 +400,8 @@ export function MergeTargetsModal({
                 group={group}
                 rootPath={rootPath}
                 directoryPattern={directoryPattern}
+                imagesPath={imagesPath}
+                allObjects={allObjects}
                 onMerged={onMerged}
               />
             ))

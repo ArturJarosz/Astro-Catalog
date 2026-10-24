@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react'
-import type { ObjectInfo, WarningInfo } from '../../electron/shared-types'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { ObjectImageEntry, ObjectInfo, WarningInfo } from '../../electron/shared-types'
 import { AltitudeChart } from './AltitudeChart'
 import type { ObservingLocation } from '../lib/observingLocation'
 import { formatAltitude, formatAngularSize, formatExposure, formatFramePortion, formatRa, formatSize } from '../lib/format'
@@ -16,6 +16,7 @@ import { useObjectImage } from '../lib/useObjectImage'
 import { getObjectWarnings } from '../lib/warnings'
 import { FileTypeChips } from './FileTypeChips'
 import { ObjectName } from './ObjectName'
+import { ObjectImagesPanel } from './ObjectImagesPanel'
 import type { AlternativeNamesDisplay } from '../lib/alternativeNamesDisplay'
 
 interface ObjectDetailModalProps {
@@ -59,6 +60,18 @@ export function ObjectDetailModal({
   onClose,
 }: ObjectDetailModalProps) {
   const { imageUrl, summary, loading: loadingSummary } = useObjectImage(object, imagesPath, true)
+  // A picture from "My images" clicked to view it in the main slot instead of the thumbnail.
+  // Keyed by object name so a preview never leaks onto another object.
+  const [preview, setPreview] = useState<{ objectName: string; image: ObjectImageEntry | null }>({
+    objectName: object.name,
+    image: null,
+  })
+  const previewImage = preview.objectName === object.name ? preview.image : null
+  const setPreviewImage = useCallback(
+    (image: ObjectImageEntry | null) => setPreview({ objectName: object.name, image }),
+    [object.name],
+  )
+  const shownImageUrl = previewImage?.url ?? imageUrl
   const objectWarnings = getObjectWarnings(object, warnings)
 
   const coordinates = useMemo(() => getObjectCoordinates(object.catalog, object.catalogNumber), [object.catalog, object.catalogNumber])
@@ -192,14 +205,21 @@ export function ObjectDetailModal({
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-5 sm:flex-row">
           <div className="flex w-full shrink-0 flex-col gap-3 sm:w-96">
             <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-black/30">
-              {loadingSummary ? (
+              {shownImageUrl ? (
+                <img src={shownImageUrl} alt={object.name} className="h-full w-full object-cover" />
+              ) : loadingSummary ? (
                 <span className="text-xs text-slate-400">Loading…</span>
-              ) : imageUrl ? (
-                <img src={imageUrl} alt={object.name} className="h-full w-full object-cover" />
               ) : (
                 <span className="px-3 text-center text-xs text-slate-400">No image available</span>
               )}
             </div>
+
+            <ObjectImagesPanel
+              objectName={object.name}
+              imagesPath={imagesPath}
+              previewFileName={previewImage?.fileName ?? null}
+              onPreview={setPreviewImage}
+            />
 
             {!loadingSummary && summary?.description && (
               <p className="text-sm font-medium text-slate-200">{summary.description}</p>

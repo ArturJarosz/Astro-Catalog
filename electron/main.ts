@@ -8,6 +8,15 @@ import { topLevelName } from './directory-pattern'
 import { buildCopyPlan, executeCopy, listSourceDirectories, SEESTAR_SOURCE_DIR } from './seestar'
 import { buildMergePlan, executeMerge } from './merge'
 import { buildRenamePlan, executeRename } from './rename'
+import {
+  addObjectImages,
+  deleteObjectImage,
+  getPrimaryObjectImageUrl,
+  listObjectImages,
+  relocateObjectImages,
+  LOCAL_OBJECT_IMAGE_EXTENSIONS,
+  setPrimaryObjectImage,
+} from './object-images'
 import type { CurrentLocationResult, MergeMoveItem, ObjectSummary, SeestarCopyItem } from './shared-types'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -154,24 +163,40 @@ ipcMain.handle('select-object-images-dir', async () => {
   return result.filePaths[0]
 })
 
-const LOCAL_OBJECT_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
+ipcMain.handle('get-local-object-image', (_event, imagesPath: string, objectName: string) =>
+  getPrimaryObjectImageUrl(imagesPath, objectName),
+)
 
-ipcMain.handle('get-local-object-image', async (_event, imagesPath: string, objectName: string) => {
-  if (!imagesPath) return null
-  let entries: string[]
-  try {
-    entries = await fs.readdir(imagesPath)
-  } catch {
-    return null
-  }
-  const match = entries.find((entry) => {
-    const ext = path.extname(entry).toLowerCase()
-    if (!LOCAL_OBJECT_IMAGE_EXTENSIONS.includes(ext)) return false
-    return path.basename(entry, path.extname(entry)).toLowerCase() === objectName.toLowerCase()
+ipcMain.handle('list-object-images', (_event, imagesPath: string, objectName: string) =>
+  listObjectImages(imagesPath, objectName),
+)
+
+ipcMain.handle('select-object-image-files', async () => {
+  if (!mainWindow) return []
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile', 'multiSelections'],
+    filters: [{ name: 'Images', extensions: LOCAL_OBJECT_IMAGE_EXTENSIONS.map((ext) => ext.slice(1)) }],
   })
-  if (!match) return null
-  return `file://${path.join(imagesPath, match)}`
+  return result.canceled ? [] : result.filePaths
 })
+
+ipcMain.handle('add-object-images', (_event, imagesPath: string, objectName: string, sourcePaths: string[]) =>
+  addObjectImages(imagesPath, objectName, sourcePaths),
+)
+
+ipcMain.handle('set-primary-object-image', (_event, imagesPath: string, objectName: string, fileName: string) =>
+  setPrimaryObjectImage(imagesPath, objectName, fileName),
+)
+
+ipcMain.handle('delete-object-image', (_event, imagesPath: string, objectName: string, fileName: string) =>
+  deleteObjectImage(imagesPath, objectName, fileName, (filePath) => shell.trashItem(filePath)),
+)
+
+ipcMain.handle(
+  'relocate-object-images',
+  (_event, imagesPath: string, fromName: string, toName: string, keepSource: boolean) =>
+    relocateObjectImages(imagesPath, fromName, toName, keepSource),
+)
 
 ipcMain.handle(
   'build-seestar-copy-plan',

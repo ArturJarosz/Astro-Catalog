@@ -34,6 +34,17 @@ const api: AstroCatalogueApi = {
   selectObjectImagesDir: () => ipcRenderer.invoke('select-object-images-dir'),
   getLocalObjectImage: (imagesPath: string, objectName: string) =>
     ipcRenderer.invoke('get-local-object-image', imagesPath, objectName),
+  listObjectImages: (imagesPath: string, objectName: string) =>
+    ipcRenderer.invoke('list-object-images', imagesPath, objectName),
+  selectObjectImageFiles: () => ipcRenderer.invoke('select-object-image-files'),
+  addObjectImages: (imagesPath: string, objectName: string, sourcePaths: string[]) =>
+    ipcRenderer.invoke('add-object-images', imagesPath, objectName, sourcePaths),
+  setPrimaryObjectImage: (imagesPath: string, objectName: string, fileName: string) =>
+    ipcRenderer.invoke('set-primary-object-image', imagesPath, objectName, fileName),
+  deleteObjectImage: (imagesPath: string, objectName: string, fileName: string) =>
+    ipcRenderer.invoke('delete-object-image', imagesPath, objectName, fileName),
+  relocateObjectImages: (imagesPath: string, fromName: string, toName: string, keepSource: boolean) =>
+    ipcRenderer.invoke('relocate-object-images', imagesPath, fromName, toName, keepSource),
   buildSeestarCopyPlan: (
     subDirNames: string[],
     targetDirectory: string,
