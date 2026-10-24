@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { ObjectImageEntry } from '../../electron/shared-types'
 import { notifyObjectImagesChanged, useObjectImagesVersion } from '../lib/useObjectImage'
+import { ImageCropEditor } from './ImageCropEditor'
+import { ObjectImageView } from './ObjectImageView'
 
 interface ObjectImagesPanelProps {
   objectName: string
@@ -26,6 +28,7 @@ export function ObjectImagesPanel({ objectName, imagesPath, previewFileName, onP
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [editing, setEditing] = useState<ObjectImageEntry | null>(null)
   const imagesVersion = useObjectImagesVersion()
 
   useEffect(() => {
@@ -101,7 +104,7 @@ export function ObjectImagesPanel({ objectName, imagesPath, previewFileName, onP
                     previewing ? 'border-sky-400' : 'border-white/10 hover:border-white/30'
                   }`}
                 >
-                  <img src={image.url} alt={image.fileName} className="h-full w-full object-cover" />
+                  <ObjectImageView url={image.url} alt={image.fileName} display={image.display} />
                   {image.isPrimary && (
                     <span className="absolute left-1 top-1 rounded bg-sky-500/80 px-1 py-0.5 text-[9px] font-semibold uppercase text-white">
                       Thumbnail
@@ -130,18 +133,26 @@ export function ObjectImagesPanel({ objectName, imagesPath, previewFileName, onP
                     </button>
                   </div>
                 ) : (
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1">
                     {!image.isPrimary && (
                       <button
                         onClick={() =>
                           run(() => window.astroCatalogue.setPrimaryObjectImage(imagesPath, objectName, image.fileName))
                         }
                         disabled={busy}
-                        className="flex-1 rounded bg-white/5 px-1 py-0.5 text-[10px] font-medium text-slate-200 hover:bg-white/10"
+                        className="basis-full rounded bg-white/5 px-1 py-0.5 text-[10px] font-medium text-slate-200 hover:bg-white/10"
                       >
                         Use as thumbnail
                       </button>
                     )}
+                    <button
+                      onClick={() => setEditing(image)}
+                      disabled={busy}
+                      title="Show the whole picture or choose the cropped part"
+                      className="flex-1 rounded px-1 py-0.5 text-[10px] text-slate-200 hover:bg-white/10"
+                    >
+                      Crop…
+                    </button>
                     <button
                       onClick={() => setConfirmDelete(image.fileName)}
                       disabled={busy}
@@ -155,6 +166,18 @@ export function ObjectImagesPanel({ objectName, imagesPath, previewFileName, onP
             )
           })}
         </div>
+      )}
+
+      {editing && (
+        <ImageCropEditor
+          image={editing}
+          onSave={async (display) => {
+            await window.astroCatalogue.setObjectImageDisplay(imagesPath, objectName, editing.fileName, display)
+            onPreview(null)
+            notifyObjectImagesChanged()
+          }}
+          onClose={() => setEditing(null)}
+        />
       )}
     </div>
   )

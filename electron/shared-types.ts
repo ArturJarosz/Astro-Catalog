@@ -59,6 +59,36 @@ export interface ObjectSummary {
   pageUrl: string | null
 }
 
+/**
+ * How a picture fills the square image slots: `full` shows the whole picture (letterboxed),
+ * `crop` shows a square part of it. `zoom` 1 is the largest square that fits; `centerX`/`centerY`
+ * are the crop centre as fractions (0–1) of the picture's width/height.
+ */
+export type ObjectImageDisplay = { mode: 'full' } | { mode: 'crop'; zoom: number; centerX: number; centerY: number }
+
+export const MAX_OBJECT_IMAGE_ZOOM = 8
+
+/** Centre crop at zoom 1 — what pictures without a saved setting show (same as CSS object-cover). */
+export const DEFAULT_OBJECT_IMAGE_DISPLAY: ObjectImageDisplay = { mode: 'crop', zoom: 1, centerX: 0.5, centerY: 0.5 }
+
+/** Validates an untrusted display setting (IPC input / the sidecar file), or null if invalid. */
+export function parseObjectImageDisplay(value: unknown): ObjectImageDisplay | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  if (v.mode === 'full') return { mode: 'full' }
+  if (v.mode !== 'crop') return null
+  const { zoom, centerX, centerY } = v
+  if (typeof zoom !== 'number' || typeof centerX !== 'number' || typeof centerY !== 'number') return null
+  if (![zoom, centerX, centerY].every(Number.isFinite)) return null
+  const clamp01 = (n: number) => Math.min(1, Math.max(0, n))
+  return {
+    mode: 'crop',
+    zoom: Math.min(MAX_OBJECT_IMAGE_ZOOM, Math.max(1, zoom)),
+    centerX: clamp01(centerX),
+    centerY: clamp01(centerY),
+  }
+}
+
 /** One user-provided picture of an object in the Object images folder (`electron/object-images.ts`). */
 export interface ObjectImageEntry {
   fileName: string
@@ -67,6 +97,7 @@ export interface ObjectImageEntry {
   index: number
   /** The picture used as the object's thumbnail. */
   isPrimary: boolean
+  display: ObjectImageDisplay
 }
 
 export const DEFAULT_SEESTAR_DIRECTORY_PATTERN = '{object}/{type}/{date} {type} {exposure}'
@@ -225,12 +256,18 @@ export interface AstroCatalogueApi {
   listSeestarDirectories: (sourceDirectory: string) => Promise<SeestarSourceDirectory[]>
   selectSeestarTargetDir: () => Promise<string | null>
   selectObjectImagesDir: () => Promise<string | null>
-  getLocalObjectImage: (imagesPath: string, objectName: string) => Promise<string | null>
+  getLocalObjectImage: (imagesPath: string, objectName: string) => Promise<ObjectImageEntry | null>
   listObjectImages: (imagesPath: string, objectName: string) => Promise<ObjectImageEntry[]>
   selectObjectImageFiles: () => Promise<string[]>
   addObjectImages: (imagesPath: string, objectName: string, sourcePaths: string[]) => Promise<string[]>
   setPrimaryObjectImage: (imagesPath: string, objectName: string, fileName: string) => Promise<void>
   deleteObjectImage: (imagesPath: string, objectName: string, fileName: string) => Promise<void>
+  setObjectImageDisplay: (
+    imagesPath: string,
+    objectName: string,
+    fileName: string,
+    display: ObjectImageDisplay,
+  ) => Promise<void>
   relocateObjectImages: (imagesPath: string, fromName: string, toName: string, keepSource: boolean) => Promise<string[]>
   buildSeestarCopyPlan: (
     subDirNames: string[],

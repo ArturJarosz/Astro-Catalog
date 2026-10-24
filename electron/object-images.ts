@@ -1,14 +1,20 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import type { ObjectImageEntry } from './shared-types'
+import {
+  DEFAULT_OBJECT_IMAGE_DISPLAY,
+  parseObjectImageDisplay,
+  type ObjectImageDisplay,
+  type ObjectImageEntry,
+} from './shared-types'
 
 /**
  * User-provided object pictures live flat inside the configured "Object images" folder:
  *  - `<object>.<ext>` is the primary picture (implicitly number 1), used as the object's thumbnail;
  *  - `<object>(2).<ext>`, `<object>(3).<ext>`, … are further pictures of the same object.
  * Brackets (not `-N`) keep the numbering apart from catalogue names such as `Sh2-155`.
- * The folder is self-describing: choosing another thumbnail swaps file names with the primary,
- * so no extra state is stored anywhere.
+ * Choosing another thumbnail swaps file names with the primary. The only other state is how each
+ * picture is displayed (full / crop), kept in the DISPLAY_SETTINGS_FILE sidecar next to the pictures
+ * and keyed by file name, so every rename below carries its entry along.
  */
 export const LOCAL_OBJECT_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
@@ -29,6 +35,49 @@ export function objectImagePathFromUrl(url: string): string | null {
   const filePath = decodeURIComponent(pathname.slice(1))
   if (!path.isAbsolute(filePath)) return null
   return LOCAL_OBJECT_IMAGE_EXTENSIONS.includes(path.extname(filePath).toLowerCase()) ? filePath : null
+}
+
+const DISPLAY_SETTINGS_FILE = '.astro-catalogue-images.json'
+
+type DisplaySettings = Record<string, ObjectImageDisplay>
+
+async function readDisplaySettings(imagesPath: string): Promise<DisplaySettings> {
+  let raw: unknown
+  try {
+    raw = JSON.parse(await fs.readFile(path.join(imagesPath, DISPLAY_SETTINGS_FILE), 'utf8'))
+  } catch {
+    return {}
+  }
+  const displays = (raw as { displays?: unknown } | null)?.displays
+  if (!displays || typeof displays !== 'object') return {}
+  const settings: DisplaySettings = {}
+  for (const [fileName, value] of Object.entries(displays)) {
+    const display = parseObjectImageDisplay(value)
+    if (display) settings[fileName] = display
+  }
+  return settings
+}
+
+async function updateDisplaySettings(imagesPath: string, update: (settings: DisplaySettings) => void) {
+  const settings = await readDisplaySettings(imagesPath)
+  const before = JSON.stringify(settings)
+  update(settings)
+  if (JSON.stringify(settings) === before) return
+  const filePath = path.join(imagesPath, DISPLAY_SETTINGS_FILE)
+  await fs.writeFile(`${filePath}.tmp`, JSON.stringify({ version: 1, displays: settings }, null, 2))
+  await fs.rename(`${filePath}.tmp`, filePath)
+}
+
+/** Moves (or with `keep`, copies) display entries along with renamed files: `[from, to]` pairs. */
+async function carryDisplaySettings(imagesPath: string, renames: Array<[string, string]>, keep = false) {
+  await updateDisplaySettings(imagesPath, (settings) => {
+    const carried = renames.map(([from, to]) => [to, settings[from]] as const)
+    if (!keep) for (const [from] of renames) delete settings[from]
+    for (const [to, display] of carried) {
+      if (display) settings[to] = display
+      else delete settings[to]
+    }
+  })
 }
 
 // Bumped on every change to the images folder made through this module. Renames keep a file's
@@ -82,6 +131,7 @@ export async function listObjectImages(imagesPath: string, objectName: string): 
     .filter((entry): entry is { fileName: string; index: number } => entry.index !== null)
     .sort((a, b) => a.index - b.index || a.fileName.localeCompare(b.fileName))
 
+  const displays = matches.length > 0 ? await readDisplaySettings(imagesPath) : {}
   const images: ObjectImageEntry[] = []
   for (const { fileName, index } of matches) {
     const filePath = path.join(imagesPath, fileName)
@@ -89,16 +139,34 @@ export async function listObjectImages(imagesPath: string, objectName: string): 
     if (!stat?.isFile()) continue
     // The query defeats Chromium's image cache after files are replaced or swapped.
     const url = objectImageUrl(filePath, `${Math.round(stat.mtimeMs)}-${imagesRevision}`)
-    images.push({ fileName, url, index, isPrimary: false })
+    images.push({ fileName, url, index, isPrimary: false, display: displays[fileName] ?? DEFAULT_OBJECT_IMAGE_DISPLAY })
   }
   if (images.length > 0 && images[0].index === 0) images[0].isPrimary = true
   return images
 }
 
-/** URL of the object's primary image, or null when it has none. */
-export async function getPrimaryObjectImageUrl(imagesPath: string, objectName: string): Promise<string | null> {
+/** The object's primary image, or null when it has none. */
+export async function getPrimaryObjectImage(imagesPath: string, objectName: string): Promise<ObjectImageEntry | null> {
   const [first] = await listObjectImages(imagesPath, objectName)
-  return first?.isPrimary ? first.url : null
+  return first?.isPrimary ? first : null
+}
+
+/** Saves how one picture is displayed (full / crop area). */
+export async function setObjectImageDisplay(
+  imagesPath: string,
+  objectName: string,
+  fileName: string,
+  display: unknown,
+): Promise<void> {
+  assertObjectName(objectName)
+  assertObjectImage(objectName, fileName)
+  const parsed = parseObjectImageDisplay(display)
+  if (!parsed) throw new Error('Invalid display setting.')
+  if (!(await exists(path.join(imagesPath, fileName)))) throw new Error(`"${fileName}" no longer exists.`)
+  imagesRevision += 1
+  await updateDisplaySettings(imagesPath, (settings) => {
+    settings[fileName] = parsed
+  })
 }
 
 function nextFreeIndex(images: ObjectImageEntry[]): number {
@@ -162,6 +230,7 @@ export async function setPrimaryObjectImage(imagesPath: string, objectName: stri
   if (!primary) {
     imagesRevision += 1
     await fs.rename(chosenPath, newChosenPath)
+    await carryDisplaySettings(imagesPath, [[fileName, path.basename(newChosenPath)]])
     return
   }
 
@@ -182,6 +251,10 @@ export async function setPrimaryObjectImage(imagesPath: string, objectName: stri
     throw error
   }
   await fs.rename(tempPath, demotedPath)
+  await carryDisplaySettings(imagesPath, [
+    [fileName, path.basename(newChosenPath)],
+    [primary.fileName, path.basename(demotedPath)],
+  ])
 }
 
 /**
@@ -198,6 +271,9 @@ export async function deleteObjectImage(
   const index = assertObjectImage(objectName, fileName)
   imagesRevision += 1
   await trash(path.join(imagesPath, fileName))
+  await updateDisplaySettings(imagesPath, (settings) => {
+    delete settings[fileName]
+  })
   if (index !== 0) return
 
   const remaining = await listObjectImages(imagesPath, objectName)
@@ -244,5 +320,10 @@ export async function relocateObjectImages(
     else await fs.rename(sourcePath, destPath)
     relocated.push(path.basename(destPath))
   }
+  await carryDisplaySettings(
+    imagesPath,
+    sources.map((source, i) => [source.fileName, relocated[i]]),
+    keepSource,
+  )
   return relocated
 }

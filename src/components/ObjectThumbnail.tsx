@@ -1,6 +1,7 @@
 import type { ObjectInfo } from '../../electron/shared-types'
 import { THUMBNAIL_SIZE_PX, type ThumbnailSize } from '../lib/thumbnailSize'
 import { useObjectImage } from '../lib/useObjectImage'
+import { ObjectImageView } from './ObjectImageView'
 
 interface ObjectThumbnailProps {
   object: ObjectInfo
@@ -9,7 +10,7 @@ interface ObjectThumbnailProps {
 }
 
 export function ObjectThumbnail({ object, imagesPath, size }: ObjectThumbnailProps) {
-  const { imageUrl } = useObjectImage(object, imagesPath, false)
+  const { imageUrl, imageDisplay } = useObjectImage(object, imagesPath, false)
   const sizePx = THUMBNAIL_SIZE_PX[size]
 
   return (
@@ -18,7 +19,7 @@ export function ObjectThumbnail({ object, imagesPath, size }: ObjectThumbnailPro
       style={{ width: sizePx, height: sizePx }}
     >
       {imageUrl ? (
-        <img src={imageUrl} alt={object.name} className="h-full w-full object-cover" />
+        <ObjectImageView url={imageUrl} alt={object.name} display={imageDisplay} />
       ) : (
         <span className="text-[10px] text-slate-400">—</span>
       )}
