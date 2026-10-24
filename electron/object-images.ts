@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
 import type { ObjectImageEntry } from './shared-types'
 
 /**
@@ -12,6 +11,25 @@ import type { ObjectImageEntry } from './shared-types'
  * so no extra state is stored anywhere.
  */
 export const LOCAL_OBJECT_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
+
+/**
+ * Pictures are served to the renderer through this custom protocol (registered in `main.ts`)
+ * rather than `file://`: in dev the renderer is an http://localhost page, and Chromium refuses
+ * to load `file://` resources from http origins.
+ */
+export const OBJECT_IMAGE_SCHEME = 'object-image'
+
+function objectImageUrl(filePath: string, version: string): string {
+  return `${OBJECT_IMAGE_SCHEME}://local/${encodeURIComponent(filePath)}?v=${version}`
+}
+
+/** Absolute file path behind an object-image URL, or null if it isn't a supported picture. */
+export function objectImagePathFromUrl(url: string): string | null {
+  const { pathname } = new URL(url)
+  const filePath = decodeURIComponent(pathname.slice(1))
+  if (!path.isAbsolute(filePath)) return null
+  return LOCAL_OBJECT_IMAGE_EXTENSIONS.includes(path.extname(filePath).toLowerCase()) ? filePath : null
+}
 
 // Bumped on every change to the images folder made through this module. Renames keep a file's
 // mtime, so the revision (not just mtime) is what makes swapped URLs differ for Chromium's cache.
@@ -70,7 +88,7 @@ export async function listObjectImages(imagesPath: string, objectName: string): 
     const stat = await fs.stat(filePath).catch(() => null)
     if (!stat?.isFile()) continue
     // The query defeats Chromium's image cache after files are replaced or swapped.
-    const url = `${pathToFileURL(filePath).href}?v=${Math.round(stat.mtimeMs)}-${imagesRevision}`
+    const url = objectImageUrl(filePath, `${Math.round(stat.mtimeMs)}-${imagesRevision}`)
     images.push({ fileName, url, index, isPrimary: false })
   }
   if (images.length > 0 && images[0].index === 0) images[0].isPrimary = true
