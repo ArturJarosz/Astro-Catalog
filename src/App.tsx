@@ -54,6 +54,7 @@ export default function App() {
   const [selectedCatalog, setSelectedCatalog] = useState<string | null>(null)
   const [selectedObject, setSelectedObject] = useState<ObjectInfo | null>(null)
   const [renamingObject, setRenamingObject] = useState<ObjectInfo | null>(null)
+  const [renameToNonMosaic, setRenameToNonMosaic] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>(
     () => (localStorage.getItem('viewMode') as ViewMode | null) ?? 'card',
   )
@@ -990,6 +991,7 @@ export default function App() {
           directoryPattern={directoryPattern}
           imagesPath={objectImagesPath}
           allObjects={catalogue.objects}
+          toNonMosaic={renameToNonMosaic}
           onRenamed={async (affectedTopLevelNames, keepOpen) => {
             await handleAnalyzeDirectories(affectedTopLevelNames)
             if (keepOpen) return
@@ -1016,7 +1018,14 @@ export default function App() {
           objectTypeColorsEnabled={objectTypeColorsEnabled}
           alternativeNamesDisplay={alternativeNamesDisplay}
           objectTypeColors={objectTypeColors}
-          onRename={() => setRenamingObject(selectedObject)}
+          onRename={() => {
+            setRenameToNonMosaic(false)
+            setRenamingObject(selectedObject)
+          }}
+          onMergeIntoNonMosaic={() => {
+            setRenameToNonMosaic(true)
+            setRenamingObject(selectedObject)
+          }}
           onClose={() => setSelectedObject(null)}
         />
       )}

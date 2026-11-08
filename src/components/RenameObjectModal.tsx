@@ -17,6 +17,11 @@ interface RenameObjectModalProps {
   imagesPath: string
   allObjects: ObjectInfo[]
   /**
+   * Instead of renaming, move this mosaic object into its non-mosaic sibling (same name, no
+   * `_mosaic` suffix), merging into that folder if it exists. File names are left unchanged.
+   */
+  toNonMosaic?: boolean
+  /**
    * Re-analyse the given root-level folders after the rename so the catalogue reflects it.
    * `keepOpen` asks the parent not to close the modal, so an error message stays visible.
    */
@@ -32,6 +37,7 @@ export function RenameObjectModal({
   directoryPattern,
   imagesPath,
   allObjects,
+  toNonMosaic = false,
   onRenamed,
   onClose,
 }: RenameObjectModalProps) {
@@ -57,7 +63,8 @@ export function RenameObjectModal({
 
   const trimmed = newName.trim()
   const nameError = validateObjectName(newName)
-  const unchanged = trimmed === object.name
+  const unchanged = !toNonMosaic && trimmed === object.name
+  const targetIsMosaic = object.isMosaic && !toNonMosaic
 
   useEffect(() => {
     if (done || nameError || unchanged) {
@@ -69,7 +76,7 @@ export function RenameObjectModal({
       setPlanLoading(true)
       setPlanError(null)
       window.astroCatalogue
-        .buildRenamePlan(rootPath, object.path, object.isMosaic, trimmed, directoryPattern)
+        .buildRenamePlan(rootPath, object.path, object.isMosaic, trimmed, directoryPattern, targetIsMosaic)
         .then((built) => {
           if (!cancelled) setPlan(built)
         })
@@ -87,7 +94,7 @@ export function RenameObjectModal({
       cancelled = true
       clearTimeout(timer)
     }
-  }, [rootPath, directoryPattern, object.path, object.isMosaic, trimmed, nameError, unchanged, done])
+  }, [rootPath, directoryPattern, object.path, object.isMosaic, trimmed, targetIsMosaic, nameError, unchanged, done])
 
   const movableCount = plan ? plan.items.length - plan.collisionCount : 0
   const renamedFileCount = useMemo(
@@ -104,7 +111,10 @@ export function RenameObjectModal({
       const renameResult = await window.astroCatalogue.executeRename(plan.items, [object.path])
       setResult(renameResult)
       setDone(true)
-      const imagesError = await relocateObjectImagesAfterMove(imagesPath, [object], trimmed, allObjects)
+      // Pictures are keyed by object name, which a mosaic → non-mosaic move keeps.
+      const imagesError = toNonMosaic
+        ? null
+        : await relocateObjectImagesAfterMove(imagesPath, [object], trimmed, allObjects)
       if (imagesError) setError(imagesError)
       await onRenamed(plan.affectedTopLevelNames, imagesError !== null)
     } catch (e) {
@@ -121,7 +131,9 @@ export function RenameObjectModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h2 className="text-lg font-semibold text-slate-100">Rename “{object.name}”</h2>
+          <h2 className="text-lg font-semibold text-slate-100">
+            {toNonMosaic ? `Merge “${object.name}” mosaic into non-mosaic` : `Rename “${object.name}”`}
+          </h2>
           <button
             onClick={onClose}
             aria-label="Close"
@@ -132,31 +144,42 @@ export function RenameObjectModal({
         </div>
 
         <div className="flex flex-col gap-3 overflow-y-auto p-5 text-sm">
-          <p className="text-xs text-slate-400">
-            Fixes files captured under the wrong target. The object folder and any file names that
-            embed “{object.name}” are updated. If a folder for the new name already exists, the files
-            are merged into it following the import naming rules.
-          </p>
+          {toNonMosaic ? (
+            <p className="text-xs text-slate-400">
+              Moves every file of the mosaic folder{' '}
+              <code>{object.path.split(/[\\/]/).pop()}</code> into the non-mosaic folder{' '}
+              <code>{object.name}</code> following the import naming rules, creating it if needed. File
+              names are left unchanged; files already present in the destination are skipped.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-slate-400">
+                Fixes files captured under the wrong target. The object folder and any file names that
+                embed “{object.name}” are updated. If a folder for the new name already exists, the files
+                are merged into it following the import naming rules.
+              </p>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-slate-300">New name</span>
-            <input
-              type="text"
-              value={newName}
-              autoFocus
-              disabled={renaming || done}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && plan && movableCount > 0 && !renaming && !done) runRename()
-              }}
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-400 focus:border-white/20 focus:outline-none"
-            />
-            {object.isMosaic && (
-              <span className="text-[11px] text-slate-500">
-                Mosaic object — the folder keeps its <code>_mosaic</code> suffix.
-              </span>
-            )}
-          </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-slate-300">New name</span>
+                <input
+                  type="text"
+                  value={newName}
+                  autoFocus
+                  disabled={renaming || done}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && plan && movableCount > 0 && !renaming && !done) runRename()
+                  }}
+                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-slate-200 placeholder:text-slate-400 focus:border-white/20 focus:outline-none"
+                />
+                {object.isMosaic && (
+                  <span className="text-[11px] text-slate-500">
+                    Mosaic object — the folder keeps its <code>_mosaic</code> suffix.
+                  </span>
+                )}
+              </label>
+            </>
+          )}
 
           <div className="min-h-[1.5rem] text-xs">
             {nameError && !unchanged && <p className="text-red-300">{nameError}</p>}
@@ -194,7 +217,19 @@ export function RenameObjectModal({
               disabled={renaming || done || !plan || movableCount <= 0}
               className="rounded-lg bg-gradient-to-r from-sky-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-500/20 transition hover:from-sky-400 hover:to-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {renaming ? 'Renaming…' : done ? 'Renamed' : plan?.targetExists ? 'Merge & rename' : 'Rename'}
+              {toNonMosaic
+                ? renaming
+                  ? 'Merging…'
+                  : done
+                    ? 'Merged'
+                    : 'Merge'
+                : renaming
+                  ? 'Renaming…'
+                  : done
+                    ? 'Renamed'
+                    : plan?.targetExists
+                      ? 'Merge & rename'
+                      : 'Rename'}
             </button>
             <button
               onClick={onClose}

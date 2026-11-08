@@ -296,6 +296,8 @@ export interface AstroCatalogueApi {
     isMosaic: boolean,
     newName: string,
     directoryPattern: string,
+    /** Mosaic status of the destination folder; defaults to `isMosaic` (kept through the rename). */
+    targetIsMosaic?: boolean,
   ) => Promise<RenamePlan>
   executeRename: (items: MergeMoveItem[], sourceObjectPaths: string[]) => Promise<MergeResult>
   onRenameProgress: (callback: (progress: MergeProgress) => void) => () => void
