@@ -10,7 +10,8 @@ const MOSAIC_SUFFIX = '_mosaic'
  * into a folder for the new name (CLAUDE.md rules 3–5, 10):
  *  - if `<root>/<newFolderName>` doesn't exist, the files land in a fresh folder tree;
  *  - if it does, they merge into it, colliding files skipped.
- * A trailing `_mosaic` marker is preserved so mosaic status survives the rename (rule 5).
+ * A trailing `_mosaic` marker is preserved so mosaic status survives the rename (rule 5), unless
+ * `targetIsMosaic` says otherwise — e.g. merging a mosaic into its non-mosaic sibling.
  */
 export function buildRenamePlan(
   rootPath: string,
@@ -18,6 +19,7 @@ export function buildRenamePlan(
   isMosaic: boolean,
   newName: string,
   directoryPattern: string = DEFAULT_SEESTAR_DIRECTORY_PATTERN,
+  targetIsMosaic: boolean = isMosaic,
 ): RenamePlan {
   const trimmed = newName.trim()
   const nameError = validateObjectName(trimmed)
@@ -28,7 +30,7 @@ export function buildRenamePlan(
     isMosaic && oldFolderName.toLowerCase().endsWith(MOSAIC_SUFFIX)
       ? oldFolderName.slice(0, -MOSAIC_SUFFIX.length)
       : oldFolderName
-  const newFolderName = isMosaic ? `${trimmed}${MOSAIC_SUFFIX}` : trimmed
+  const newFolderName = targetIsMosaic ? `${trimmed}${MOSAIC_SUFFIX}` : trimmed
 
   if (newFolderName === oldFolderName) throw new Error('That is already the object name.')
 

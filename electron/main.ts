@@ -261,8 +261,9 @@ ipcMain.handle(
     isMosaic: boolean,
     newName: string,
     directoryPattern: string,
+    targetIsMosaic?: boolean,
   ) => {
-    return buildRenamePlan(rootPath, objectPath, isMosaic, newName, directoryPattern)
+    return buildRenamePlan(rootPath, objectPath, isMosaic, newName, directoryPattern, targetIsMosaic ?? isMosaic)
   },
 )
 

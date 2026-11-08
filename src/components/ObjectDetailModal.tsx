@@ -35,6 +35,8 @@ interface ObjectDetailModalProps {
   alternativeNamesDisplay: AlternativeNamesDisplay
   objectTypeColors: Record<string, ObjectTypeColorKey>
   onRename?: () => void
+  /** Shown for mosaic objects: move their files into the non-mosaic folder of the same name. */
+  onMergeIntoNonMosaic?: () => void
   onClose: () => void
 }
 
@@ -58,6 +60,7 @@ export function ObjectDetailModal({
   objectTypeColors,
   alternativeNamesDisplay,
   onRename,
+  onMergeIntoNonMosaic,
   onClose,
 }: ObjectDetailModalProps) {
   const { imageUrl, imageDisplay, summary, loading: loadingSummary } = useObjectImage(object, imagesPath, true)
@@ -192,6 +195,15 @@ export function ObjectDetailModal({
                 className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-200 transition hover:bg-white/10"
               >
                 Rename
+              </button>
+            )}
+            {onMergeIntoNonMosaic && object.isMosaic && (
+              <button
+                onClick={onMergeIntoNonMosaic}
+                title={`Move this mosaic's files into the non-mosaic “${object.name}” folder`}
+                className="rounded-md border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-200 transition hover:bg-white/10"
+              >
+                Merge into non-mosaic
               </button>
             )}
             <button

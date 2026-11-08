@@ -89,7 +89,9 @@ const api: AstroCatalogueApi = {
     isMosaic: boolean,
     newName: string,
     directoryPattern: string,
-  ) => ipcRenderer.invoke('build-rename-plan', rootPath, objectPath, isMosaic, newName, directoryPattern),
+    targetIsMosaic?: boolean,
+  ) =>
+    ipcRenderer.invoke('build-rename-plan', rootPath, objectPath, isMosaic, newName, directoryPattern, targetIsMosaic),
   executeRename: (items: MergeMoveItem[], sourceObjectPaths: string[]) =>
     ipcRenderer.invoke('execute-rename', items, sourceObjectPaths),
   onRenameProgress: (callback: (progress: MergeProgress) => void) => {
